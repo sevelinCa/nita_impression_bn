@@ -1,12 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsInt,
-  IsDecimal,
-  IsDate,
-  IsUUID,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsInt, IsDate, IsUUID, IsNumber } from 'class-validator';
 
 export class CreateRentalMaterialDto {
   @ApiProperty({

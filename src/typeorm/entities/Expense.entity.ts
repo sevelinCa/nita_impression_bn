@@ -3,8 +3,8 @@ import { Event } from './Event.entity';
 import { Material } from './Material.entity';
 import { RentalMaterial } from './RentalMaterial.entity';
 
-@Entity('expenses')
-export class Expense {
+@Entity('eventItems')
+export class EventItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

@@ -5,7 +5,7 @@ import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { Category } from 'src/typeorm/entities/Category.entity';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { Expense } from 'src/typeorm/entities/Expense.entity';
+import { EventItem } from 'src/typeorm/entities/Expense.entity';
 import { Return } from 'src/typeorm/entities/Return.entity';
 
 @Module({
@@ -23,7 +23,7 @@ import { Return } from 'src/typeorm/entities/Return.entity';
         RentalMaterial,
         Category,
         Event,
-        Expense,
+        EventItem,
         Return,
       ],
       synchronize: true,
@@ -34,7 +34,7 @@ import { Return } from 'src/typeorm/entities/Return.entity';
       RentalMaterial,
       Category,
       Event,
-      Expense,
+      EventItem,
       Return,
     ]),
   ],
