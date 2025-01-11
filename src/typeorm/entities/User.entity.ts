@@ -27,6 +27,12 @@ export class User {
   @Column({ nullable: true })
   address: string;
 
+  @Column({ nullable: true })
+  resetPasswordToken: string;
+
+  @Column({ nullable: true })
+  resetPasswordExpires: Date;
+
   @OneToMany(() => Event, (event) => event.user)
   events: Event[];
 }

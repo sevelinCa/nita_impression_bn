@@ -6,6 +6,7 @@ import { User } from 'src/typeorm/entities/User.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/LocalStrategy';
+import { MailService } from 'src/mail/mail.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { LocalStrategy } from './strategies/LocalStrategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
+  providers: [AuthService, JwtStrategy, LocalStrategy, MailService],
 })
 export class AuthModule {}
