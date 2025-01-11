@@ -25,14 +25,15 @@ export class UserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The password of the user',
     example: 'Password123!',
   })
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
-  password: string;
+  @IsOptional()
+  password?: string;
 
   @ApiPropertyOptional({
     description: 'The phone number of the user',
