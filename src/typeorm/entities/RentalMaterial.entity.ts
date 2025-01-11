@@ -32,4 +32,10 @@ export class RentalMaterial {
 
   @Column({ type: 'enum', enum: ['active', 'inactive'], default: 'active' })
   status: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }

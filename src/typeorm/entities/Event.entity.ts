@@ -25,6 +25,12 @@ export class Event {
   @Column()
   address: string;
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
+
   @ManyToOne(() => User, (user) => user.events)
   user: User;
 }

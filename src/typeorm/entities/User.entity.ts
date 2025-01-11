@@ -36,6 +36,12 @@ export class User {
   @Column({ nullable: true })
   resetPasswordExpires: Date;
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
+
   @OneToMany(() => Event, (event) => event.user)
   events: Event[];
 }

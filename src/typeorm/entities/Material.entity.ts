@@ -20,4 +20,10 @@ export class Material {
 
   @Column('decimal', { nullable: true })
   rentalPrice?: number;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }
