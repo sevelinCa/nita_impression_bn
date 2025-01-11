@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 import { MaterialsModule } from './materials/materials.module';
+import { RentalMaterialsModule } from './rental-materials/rental-materials.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MaterialsModule } from './materials/materials.module';
     UsersModule,
     CategoriesModule,
     MaterialsModule,
+    RentalMaterialsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
