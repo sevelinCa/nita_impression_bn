@@ -1,5 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { User } from './User.entity';
+import { EventItem } from './Expense.entity';
 
 @Entity('events')
 export class Event {
@@ -19,8 +26,11 @@ export class Event {
   })
   status: string;
 
-  @Column('decimal')
+  @Column()
   cost: number;
+
+  @Column()
+  employeeFee: number;
 
   @Column()
   address: string;
@@ -33,4 +43,8 @@ export class Event {
 
   @ManyToOne(() => User, (user) => user.events)
   user: User;
+
+  // Add the OneToMany relation here
+  @OneToMany(() => EventItem, (eventItem) => eventItem.event)
+  eventItems: EventItem[];
 }

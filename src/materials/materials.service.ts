@@ -38,7 +38,7 @@ export class MaterialsService {
     if (!category) throw new NotFoundException('Category Not Found');
 
     const material = this.materialRepository.create({
-      ...CreateMaterialDto,
+      ...createMaterialDto,
       category,
     });
     return await this.materialRepository.save(material);

@@ -28,7 +28,11 @@ export class EventItem {
   @Column('decimal', { nullable: true })
   price?: number;
 
-  @Column({ type: 'enum', enum: ['returnable', 'non-returnable'] })
+  @Column({
+    type: 'enum',
+    enum: ['returnable', 'non-returnable'],
+    nullable: true,
+  })
   type: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
