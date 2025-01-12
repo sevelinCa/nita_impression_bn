@@ -116,4 +116,51 @@ export class RentalMaterialsService {
 
     return material;
   }
+
+  async findInactiveRentalMaterials(
+    paginationQuery: PaginationQueryDto,
+    userId: string,
+  ) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User Not Found');
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to view all inactive rental materials',
+      );
+    }
+
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+
+    const [materials, totalCount] =
+      await this.rentalMaterialRepository.findAndCount({
+        take,
+        skip,
+        where: { status: 'inactive' },
+      });
+
+    return this.baseService.paginate(materials, totalCount, paginationQuery);
+  }
+
+  async markAsInactive(id: string, userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User Not Found');
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only admin is allowed to modify materials');
+    }
+
+    const rentalMaterial = await this.rentalMaterialRepository.findOne({
+      where: { id },
+    });
+    if (!rentalMaterial) throw new NotFoundException('Material Not Found');
+
+    rentalMaterial.status = 'inactive';
+    await this.rentalMaterialRepository.save(rentalMaterial);
+
+    return {
+      message: 'Rental Material status successfully updated to inactive',
+    };
+  }
 }
