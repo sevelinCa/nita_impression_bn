@@ -95,4 +95,33 @@ export class EventsController {
 
     return this.eventsService.findAll(paginationQuery, json.userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':employeeId')
+  @ApiOperation({ summary: 'Get all events by a employee' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all events by employee.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No events found.',
+  })
+  async findByUsers(
+    @Req() request: Request,
+    @Query() paginationQuery: PaginationQueryDto,
+    @Param('employeeId') employeeId: string,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+
+    return this.eventsService.findByUser(
+      paginationQuery,
+      json.userId,
+      employeeId,
+    );
+  }
 }

@@ -80,6 +80,14 @@ export class EventsService {
       if (user.role !== 'admin')
         throw new ForbiddenException('Only admin is allowed to view materials');
 
+      const employee = await this.entityManager.findOne(User, {
+        where: { id: createEventDto.employeeId },
+      });
+
+      if (employee === null) {
+        throw new NotFoundException('Employee Not Found');
+      }
+
       const event = entityManager.create(Event, {
         name: createEventDto.name,
         date: createEventDto.date,
@@ -87,7 +95,7 @@ export class EventsService {
         status: 'planning',
         cost: createEventDto.cost,
         employeeFee: createEventDto.employeeFee,
-        user,
+        user: employee,
       });
 
       await entityManager.save(Event, event);
@@ -246,7 +254,6 @@ export class EventsService {
       ],
     });
 
-
     return event;
   }
 
@@ -264,6 +271,48 @@ export class EventsService {
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
       take,
       skip,
+    });
+
+    return this.baseService.paginate(events, totalCount, paginationQuery);
+  }
+
+  async findByUser(
+    paginationQuery: PaginationQueryDto,
+    adminId: string,
+    userId: string,
+  ) {
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: adminId },
+    });
+    if (!admin) {
+      throw new NotFoundException('Admin User Not Found');
+    }
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins are allowed to view all events by a user',
+      );
+    }
+
+    const employee = await this.entityManager.findOne(User, {
+      where: { id: userId },
+    });
+    if (!employee) {
+      throw new NotFoundException('Employee Not Found');
+    }
+
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+
+    const [events, totalCount] = await this.entityManager.findAndCount(Event, {
+      where: { user: { id: employee.id } },
+      take,
+      skip,
+      relations: [
+        'eventItems',
+        'eventItems.material',
+        'eventItems.rentalMaterial',
+      ],
     });
 
     return this.baseService.paginate(events, totalCount, paginationQuery);

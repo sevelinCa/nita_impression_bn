@@ -102,14 +102,21 @@ export class CreateEventDto {
   @IsNumber()
   cost: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
+    description: 'ID of an employee',
+    type: Number,
+    example: '044233db-cce3-404b-a12f-6732b7b596f5',
+  })
+  @IsUUID()
+  employeeId: string;
+
+  @ApiProperty({
     description: 'Fee for employees working at the event',
     type: Number,
     example: 200.5,
   })
   @IsNumber()
-  @IsOptional()
-  employeeFee?: number;
+  employeeFee: number;
 
   @ApiProperty({
     description: 'List of items associated with the event',
