@@ -9,6 +9,7 @@ import {
   Query,
   Get,
   Delete,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { MaterialsService } from './materials.service';
 import { JwtService } from '@nestjs/jwt';
@@ -126,7 +127,7 @@ export class MaterialsController {
     description: 'Forbidden, only admin is allowed',
   })
   async findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() request: Request,
   ): Promise<Material> {
     const token = request.headers.authorization.replace('Bearer ', '');
@@ -154,7 +155,7 @@ export class MaterialsController {
     description: 'Forbidden, only admin is allowed',
   })
   async delete(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() request: Request,
   ): Promise<{ message: string }> {
     const token = request.headers.authorization.replace('Bearer ', '');

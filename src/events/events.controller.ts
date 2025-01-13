@@ -7,6 +7,7 @@ import {
   Get,
   Param,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -63,7 +64,10 @@ export class EventsController {
   }
 
   @Get('event-details/:id')
-  async eventDetails(@Param('id') eventId: string, @Req() request: Request) {
+  async eventDetails(
+    @Param('id', ParseUUIDPipe) eventId: string,
+    @Req() request: Request,
+  ) {
     const token = request.headers.authorization.replace('Bearer ', '');
     const json = this.jwtService.decode(token, { json: true }) as {
       userId: string;
@@ -111,7 +115,7 @@ export class EventsController {
   async findByUsers(
     @Req() request: Request,
     @Query() paginationQuery: PaginationQueryDto,
-    @Param('employeeId') employeeId: string,
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ) {
     const token = request.headers.authorization.replace('Bearer ', '');
     const json = this.jwtService.decode(token, { json: true }) as {

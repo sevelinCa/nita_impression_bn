@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -81,7 +82,7 @@ export class RentalMaterialsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a rental material' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateMaterialDto: UpdateRentalMaterialDto,
     @Req() request: Request,
   ) {
@@ -115,7 +116,10 @@ export class RentalMaterialsController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific rental material' })
-  async findOne(@Param('id') id: string, @Req() request: Request) {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: Request,
+  ) {
     const token = request.headers.authorization.replace('Bearer ', '');
     const json = this.jwtService.decode(token, { json: true }) as {
       userId: string;
@@ -141,7 +145,7 @@ export class RentalMaterialsController {
     description: 'Forbidden, only admin is allowed',
   })
   async markAsInactive(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() request: Request,
   ): Promise<{ message: string }> {
     const token = request.headers.authorization.replace('Bearer ', '');

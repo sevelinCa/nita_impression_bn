@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Put,
   Query,
@@ -49,7 +50,7 @@ export class UsersController {
     description: 'User not found',
   })
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 

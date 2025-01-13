@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from 'src/typeorm/entities/Category.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/typeorm/entities/User.entity';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -32,7 +33,33 @@ export class CategoriesService {
     return this.categoryRepository.save(collection);
   }
 
-  findAll() {
-    return this.categoryRepository.find();
+  async update(
+    updateCategoryDto: UpdateCategoryDto,
+    categoryId: string,
+    userId: string,
+  ) {
+    const admin = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!admin) throw new NotFoundException('Admin Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException('Only admin is allowed to update category');
+    }
+
+    const category = await this.categoryRepository.findOne({
+      where: { id: categoryId },
+    });
+
+    if (category === null) {
+      throw new NotFoundException('Category Not Found');
+    }
+
+    category.name = updateCategoryDto.name;
+    return this.categoryRepository.save(category);
+  }
+
+  async findAll() {
+    const categories = await this.categoryRepository.find();
+    return categories;
   }
 }

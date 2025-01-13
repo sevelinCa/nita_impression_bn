@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -71,5 +72,25 @@ export class UsersService {
     await this.userRepository.save(user);
 
     return { message: 'Password updated successfully' };
+  }
+
+  async delete(userId: string, adminId: string) {
+    const admin = await this.userRepository.findOne({ where: { id: adminId } });
+
+    if (!admin) throw new NotFoundException('Admin Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to delete an employee',
+      );
+    }
+
+    const employee = await this.userRepository.findOneBy({ id: userId });
+
+    if (employee === null) throw new NotFoundException('Employee Not Found');
+
+    await this.userRepository.remove(employee);
+
+    return { message: `${employee.fullName} deleted successfully` };
   }
 }
