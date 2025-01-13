@@ -1,25 +1,27 @@
 import { Module } from '@nestjs/common';
-import { EventsService } from './events.service';
-import { EventsController } from './events.controller';
+import { ReturnService } from './returns.service';
+import { ReturnsController } from './returns.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Return } from 'src/typeorm/entities/Return.entity';
+import { Event } from 'src/typeorm/entities/Event.entity';
 import { User } from 'src/typeorm/entities/User.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
 import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
+import { EventItem } from 'src/typeorm/entities/EventItem';
 import { JwtService } from '@nestjs/jwt';
-import { BaseService } from 'src/base.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      User,
+      Return,
       Event,
-      EventItem,
+      User,
       Material,
       RentalMaterial,
+      EventItem,
     ]),
   ],
-  controllers: [EventsController],
-  providers: [EventsService, JwtService, BaseService],
+  controllers: [ReturnsController],
+  providers: [ReturnService, JwtService],
 })
-export class EventsModule {}
+export class ReturnsModule {}

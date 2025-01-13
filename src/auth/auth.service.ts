@@ -25,7 +25,7 @@ export class AuthService {
   ) {}
 
   async create(createAuthDto: UserDto) {
-    const { email, password, fullName, age, ...userData } = createAuthDto;
+    const { email, fullName, age, ...userData } = createAuthDto;
 
     const existingUser = await this.userRepository.findOneBy({ email });
     if (existingUser) {
@@ -34,18 +34,30 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (createAuthDto.password) {
+      const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
+
+      const newUser = this.userRepository.create({
+        ...userData,
+        fullName,
+        email,
+        password: hashedPassword,
+        age: age ? Number(age) : undefined,
+      });
+      const result = await this.userRepository.save(newUser);
+      return {
+        message: 'User created successfully',
+        userId: result.id,
+      };
+    }
 
     const newUser = this.userRepository.create({
       ...userData,
       fullName,
       email,
-      password: hashedPassword,
       age: age ? Number(age) : undefined,
     });
-
     const result = await this.userRepository.save(newUser);
-
     return {
       message: 'User created successfully',
       userId: result.id,

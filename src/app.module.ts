@@ -8,6 +8,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { MaterialsModule } from './materials/materials.module';
 import { RentalMaterialsModule } from './rental-materials/rental-materials.module';
 import { EventsModule } from './events/events.module';
+import { ReturnsModule } from './returns/returns.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EventsModule } from './events/events.module';
     MaterialsModule,
     RentalMaterialsModule,
     EventsModule,
+    ReturnsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

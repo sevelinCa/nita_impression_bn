@@ -4,9 +4,10 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './User.entity';
-import { EventItem } from './Expense.entity';
+import { EventItem } from './EventItem';
 
 @Entity('events')
 export class Event {
@@ -41,10 +42,10 @@ export class Event {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.events)
+  @ManyToOne(() => User, (user) => user.events, { nullable: false })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
-  // Add the OneToMany relation here
   @OneToMany(() => EventItem, (eventItem) => eventItem.event)
   eventItems: EventItem[];
 }

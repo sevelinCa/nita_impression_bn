@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { EventItem } from 'src/typeorm/entities/Expense.entity';
+import { EventItem } from 'src/typeorm/entities/EventItem';
 import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -84,8 +84,16 @@ export class EventsService {
         where: { id: createEventDto.employeeId },
       });
 
+      console.log('employee', employee);
+
       if (employee === null) {
         throw new NotFoundException('Employee Not Found');
+      }
+
+      if (employee.role !== 'worker') {
+        throw new NotFoundException(
+          'only worker can be assigned to event buddy',
+        );
       }
 
       const event = entityManager.create(Event, {
@@ -271,6 +279,11 @@ export class EventsService {
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
       take,
       skip,
+      relations: [
+        'eventItems',
+        'eventItems.material',
+        'eventItems.rentalMaterial',
+      ],
     });
 
     return this.baseService.paginate(events, totalCount, paginationQuery);
@@ -284,6 +297,7 @@ export class EventsService {
     const admin = await this.entityManager.findOne(User, {
       where: { id: adminId },
     });
+    console.log('------>admin', admin);
     if (!admin) {
       throw new NotFoundException('Admin User Not Found');
     }
@@ -297,8 +311,13 @@ export class EventsService {
     const employee = await this.entityManager.findOne(User, {
       where: { id: userId },
     });
+    console.log('------->employee', employee);
     if (!employee) {
       throw new NotFoundException('Employee Not Found');
+    }
+
+    if (employee.role !== 'worker') {
+      throw new BadRequestException('Must be employee not admin buddy');
     }
 
     const { skip, take } =

@@ -24,7 +24,16 @@ export class Return {
   rentalMaterial?: RentalMaterial;
 
   @Column('int')
-  quantity: number;
+  returnedQuantity: number;
+
+  @Column('int')
+  remainingQuantity: number;
+
+  @Column({
+    type: 'enum',
+    enum: ['complete', 'incomplete'],
+  })
+  status: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
