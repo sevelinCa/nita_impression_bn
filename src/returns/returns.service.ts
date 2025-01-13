@@ -13,12 +13,15 @@ import { User } from '../typeorm/entities/User.entity';
 import { Material } from '../typeorm/entities/Material.entity';
 import { RentalMaterial } from '../typeorm/entities/RentalMaterial.entity';
 import { CreateReturnDto } from './create-return.dto';
+import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
+import { BaseService } from 'src/base.service';
 
 @Injectable()
 export class ReturnService {
   constructor(
     private dataSource: DataSource,
     private readonly entityManager: EntityManager,
+    private readonly baseService: BaseService,
   ) {}
 
   async createReturn(createReturnDto: CreateReturnDto, userId: string) {
@@ -257,5 +260,60 @@ export class ReturnService {
         : null,
       createdAt: r.createdAt,
     }));
+  }
+
+  async findAll(paginationQuery: PaginationQueryDto, adminId: string) {
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: adminId },
+    });
+    if (admin === null) throw new NotFoundException('User Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to access this endpoint',
+      );
+    }
+
+    const [returns, totalCount] = await this.entityManager.findAndCount(
+      Return,
+      {
+        take,
+        skip,
+      },
+    );
+
+    return this.baseService.paginate(returns, totalCount, paginationQuery);
+  }
+
+  async getReturnsByStatus(
+    paginationQuery: PaginationQueryDto,
+    adminId: string,
+    status: string,
+  ) {
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: adminId },
+    });
+    if (admin === null) throw new NotFoundException('User Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to access this endpoint',
+      );
+    }
+
+    const [returns, totalCount] = await this.entityManager.findAndCount(
+      Return,
+      {
+        take,
+        skip,
+        where: { status: status },
+      },
+    );
+
+    return this.baseService.paginate(returns, totalCount, paginationQuery);
   }
 }

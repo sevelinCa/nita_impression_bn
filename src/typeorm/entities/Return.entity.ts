@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Event } from './Event.entity';
 import { User } from './User.entity';
 import { Material } from './Material.entity';
@@ -13,6 +19,7 @@ export class Return {
   event: Event;
 
   @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @ManyToOne(() => Material, (material) => material.id, { nullable: true })

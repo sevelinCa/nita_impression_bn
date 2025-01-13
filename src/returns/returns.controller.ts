@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -20,6 +22,7 @@ import { CreateReturnDto } from './create-return.dto';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
+import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 
 @Controller('returns')
 export class ReturnsController {
@@ -78,7 +81,7 @@ export class ReturnsController {
   }
 
   @Get(':userId')
-  @ApiOperation({ summary: 'Get all returns for the authenticated worker' })
+  @ApiOperation({ summary: 'Get all returns for the worker' })
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
@@ -121,5 +124,57 @@ export class ReturnsController {
       userId: string;
     };
     return this.returnsService.getReturnsByEvent(eventId, decoded.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all returns with pagination' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns retrieved successfully',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async findAll(
+    @Query() paginationQuery: PaginationQueryDto,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const decoded = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.returnsService.findAll(paginationQuery, decoded.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('status/:status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all returns by status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns retrieved successfully',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not an admin' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getReturnsByStatus(
+    @Query() paginationQuery: PaginationQueryDto,
+    @Req() request: Request,
+    @Param('status') status: string,
+  ) {
+    if (!['complete', 'incomplete'].includes(status)) {
+      throw new BadRequestException(
+        'Invalid status. Status must be either "complete" or "incomplete".',
+      );
+    }
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const decoded = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.returnsService.getReturnsByStatus(
+      paginationQuery,
+      decoded.userId,
+      status,
+    );
   }
 }
