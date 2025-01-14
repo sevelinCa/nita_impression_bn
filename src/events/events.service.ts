@@ -14,6 +14,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { User } from 'src/typeorm/entities/User.entity';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { BaseService } from 'src/base.service';
+import { ChangeStatusDto } from './dto/change-status.dto';
 
 interface ConsolidatedItem {
   materialId?: string;
@@ -84,8 +85,6 @@ export class EventsService {
         where: { id: createEventDto.employeeId },
       });
 
-      console.log('employee', employee);
-
       if (employee === null) {
         throw new NotFoundException('Employee Not Found');
       }
@@ -141,6 +140,7 @@ export class EventsService {
             quantity: item.quantity,
             price: item.price,
           });
+          eventItem.material = returnableMaterial;
           await entityManager.save(Material, returnableMaterial);
         }
 
@@ -297,7 +297,6 @@ export class EventsService {
     const admin = await this.entityManager.findOne(User, {
       where: { id: adminId },
     });
-    console.log('------>admin', admin);
     if (!admin) {
       throw new NotFoundException('Admin User Not Found');
     }
@@ -311,7 +310,6 @@ export class EventsService {
     const employee = await this.entityManager.findOne(User, {
       where: { id: userId },
     });
-    console.log('------->employee', employee);
     if (!employee) {
       throw new NotFoundException('Employee Not Found');
     }
@@ -335,5 +333,86 @@ export class EventsService {
     });
 
     return this.baseService.paginate(events, totalCount, paginationQuery);
+  }
+
+  async updateEventStatusService(
+    changeStatusDto: ChangeStatusDto,
+    adminId: string,
+    eventId: string,
+  ) {
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: adminId },
+    });
+    if (!admin) {
+      throw new NotFoundException('Admin User Not Found');
+    }
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins are allowed to update event status',
+      );
+    }
+
+    const event = await this.entityManager.findOne(Event, {
+      where: { id: eventId },
+    });
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    switch (changeStatusDto.status) {
+      case 'ongoing':
+      case 'done':
+        return this.updateSimpleEventStatus(event, changeStatusDto.status);
+
+      case 'cancelled':
+        return this.handleCancelledEvent(event);
+
+      default:
+        throw new BadRequestException('Invalid status provided');
+    }
+  }
+
+  private async updateSimpleEventStatus(
+    event: Event,
+    status: string,
+  ): Promise<Event> {
+    event.status = status;
+    return await this.entityManager.save(event);
+  }
+
+  private async handleCancelledEvent(event: Event): Promise<void> {
+    event.status = 'cancelled';
+
+    const eventItems = await this.entityManager.find(EventItem, {
+      where: { event: { id: event.id } },
+      relations: ['material', 'rentalMaterial'],
+    });
+
+    for (const item of eventItems) {
+      if (item.type === 'returnable') {
+        const material =
+          item.material ||
+          (await this.entityManager.findOne(Material, {
+            where: { id: item.material?.id },
+          }));
+
+        if (material) {
+          await this.entityManager.remove(Material, material);
+        }
+      }
+
+      if (item.material) {
+        item.material.quantity += item.quantity;
+        await this.entityManager.save(Material, item.material);
+      }
+
+      if (item.rentalMaterial) {
+        item.rentalMaterial.quantity += item.quantity;
+        await this.entityManager.save(RentalMaterial, item.rentalMaterial);
+      }
+    }
+
+    await this.entityManager.save(Event, event);
   }
 }

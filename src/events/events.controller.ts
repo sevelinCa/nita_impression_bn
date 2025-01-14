@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiParam,
 } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -22,6 +24,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
+import { ChangeStatusDto } from './dto/change-status.dto';
 
 @ApiTags('Events')
 @ApiBearerAuth()
@@ -64,6 +67,7 @@ export class EventsController {
   }
 
   @Get('event-details/:id')
+  @ApiOperation({ summary: 'Get event by ID' })
   async eventDetails(
     @Param('id', ParseUUIDPipe) eventId: string,
     @Req() request: Request,
@@ -74,6 +78,29 @@ export class EventsController {
     };
 
     return this.eventsService.eventDetails(eventId, json.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an event status' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the event to update',
+  })
+  async updateEventStatus(
+    @Body() changeEventStatus: ChangeStatusDto,
+    @Param('id', ParseUUIDPipe) eventId: string,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.eventsService.updateEventStatusService(
+      changeEventStatus,
+      json.userId,
+      eventId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

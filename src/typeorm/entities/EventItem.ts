@@ -11,7 +11,10 @@ export class EventItem {
   @ManyToOne(() => Event, (event) => event.id)
   event: Event;
 
-  @ManyToOne(() => Material, (material) => material.id, { nullable: true })
+  @ManyToOne(() => Material, (material) => material.id, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   material?: Material;
 
   @ManyToOne(() => RentalMaterial, (rentalMaterial) => rentalMaterial.id, {

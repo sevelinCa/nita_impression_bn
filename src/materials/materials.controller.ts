@@ -14,7 +14,7 @@ import {
 import { MaterialsService } from './materials.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateMaterialDto } from './dto/create-material.dto';
-import { UpdateMaterialDto } from './dto/update-material.dto'; // Import the UpdateMaterialDto
+import { UpdateMaterialDto } from './dto/update-material.dto';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
