@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EntityManager, Between } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
 import { User } from 'src/typeorm/entities/User.entity';
@@ -107,5 +112,68 @@ export class ReportsService {
       itemizedExpenses,
       employeeFee: event.employeeFee,
     };
+  }
+
+  async yearlyReport(userId: string) {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User Not Found');
+
+    if (user.role !== 'admin')
+      throw new ForbiddenException('Only admin is allowed to view materials');
+
+    const now = new Date();
+    const year = now.getFullYear();
+
+    const monthlyReports = [];
+
+    for (let month = 0; month < 12; month++) {
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0);
+
+      const totalEventsInMonth = await this.entityManager.find(Event, {
+        where: { date: Between(startOfMonth, endOfMonth) },
+        relations: ['eventItems', 'eventItems.rentalMaterial'],
+      });
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      for (const event of totalEventsInMonth) {
+        if (event.status === 'cancelled') {
+          continue;
+        }
+        totalIncome += event.cost;
+
+        let totalEventExpense = event.employeeFee || 0;
+
+        for (const eventItem of event.eventItems) {
+          if (eventItem.price) {
+            totalEventExpense += eventItem.price * eventItem.quantity;
+          }
+
+          if (eventItem.rentalMaterial) {
+            totalEventExpense +=
+              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+          }
+        }
+
+        totalExpense += totalEventExpense;
+      }
+
+      const monthName = startOfMonth.toLocaleString('default', {
+        month: 'long',
+      });
+
+      monthlyReports.push({
+        [monthName.toLowerCase()]: {
+          income: totalIncome,
+          expense: totalExpense,
+        },
+      });
+    }
+
+    return monthlyReports;
   }
 }
