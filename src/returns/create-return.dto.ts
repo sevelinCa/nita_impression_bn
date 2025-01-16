@@ -4,6 +4,7 @@ import {
   IsUUID,
   ValidateNested,
   Min,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -24,6 +25,15 @@ class ReturnItemDto {
   })
   @Min(1, { message: 'Returned quantity must be at least 1.' })
   returnedQuantity: number;
+
+  @ApiProperty({
+    description: 'Optional existing return ID for subsequent returns',
+    example: 'e1c9023f-9a0b-4bdc-8ea8-b5f7d80d6c35',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  returnId?: string;
 }
 
 export class CreateReturnDto {

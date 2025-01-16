@@ -10,6 +10,8 @@ import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { EventItem } from 'src/typeorm/entities/EventItem';
 import { JwtService } from '@nestjs/jwt';
 import { BaseService } from 'src/base.service';
+import { MailService } from 'src/mail/mail.service';
+import { ReportsService } from 'src/reports/reports.service';
 
 @Module({
   imports: [
@@ -23,6 +25,12 @@ import { BaseService } from 'src/base.service';
     ]),
   ],
   controllers: [ReturnsController],
-  providers: [ReturnService, JwtService, BaseService],
+  providers: [
+    ReturnService,
+    JwtService,
+    BaseService,
+    MailService,
+    ReportsService,
+  ],
 })
 export class ReturnsModule {}

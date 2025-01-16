@@ -9,6 +9,7 @@ import { Event } from './Event.entity';
 import { User } from './User.entity';
 import { Material } from './Material.entity';
 import { RentalMaterial } from './RentalMaterial.entity';
+import { EventItem } from './EventItem';
 
 @Entity('returns')
 export class Return {
@@ -21,6 +22,10 @@ export class Return {
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToOne(() => EventItem, (eventItem) => eventItem.id)
+  @JoinColumn({ name: 'eventItemId' })
+  eventItem: EventItem;
 
   @ManyToOne(() => Material, (material) => material.id, { nullable: true })
   material?: Material;

@@ -4,17 +4,19 @@ import {
   InternalServerErrorException,
   NotFoundException,
   ForbiddenException,
+  HttpException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Return } from '../typeorm/entities/Return.entity';
 import { Event } from '../typeorm/entities/Event.entity';
-import { EventItem } from '../typeorm/entities/EventItem';
 import { User } from '../typeorm/entities/User.entity';
 import { Material } from '../typeorm/entities/Material.entity';
 import { RentalMaterial } from '../typeorm/entities/RentalMaterial.entity';
 import { CreateReturnDto } from './create-return.dto';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { BaseService } from 'src/base.service';
+import { MailService } from 'src/mail/mail.service';
+import { ReportsService } from 'src/reports/reports.service';
 
 @Injectable()
 export class ReturnService {
@@ -22,6 +24,8 @@ export class ReturnService {
     private dataSource: DataSource,
     private readonly entityManager: EntityManager,
     private readonly baseService: BaseService,
+    private readonly mailService: MailService,
+    private readonly reportService: ReportsService,
   ) {}
 
   async createReturn(createReturnDto: CreateReturnDto, userId: string) {
@@ -32,19 +36,12 @@ export class ReturnService {
     try {
       const entityManager = queryRunner.manager;
 
-      const admin = await this.entityManager.findOne(User, {
+      const admin = await entityManager.findOne(User, {
         where: { id: userId },
       });
-      if (!admin) {
-        throw new NotFoundException('Admin User Not Found');
+      if (!admin || admin.role !== 'admin') {
+        throw new ForbiddenException('Only admins can process returns');
       }
-
-      if (admin.role !== 'admin') {
-        throw new ForbiddenException(
-          'Only admins are allowed to view all events by a user',
-        );
-      }
-
       const user = await entityManager.findOne(User, {
         where: { id: createReturnDto.employeeId },
       });
@@ -74,22 +71,6 @@ export class ReturnService {
         );
       }
 
-      const returnableItems = event.eventItems.filter(
-        (ei) => ei.type !== 'non-returnable',
-      );
-      const missingItems = returnableItems.filter(
-        (ei) =>
-          !createReturnDto.items.some((item) => item.eventItemId === ei.id),
-      );
-
-      if (missingItems.length > 0) {
-        throw new BadRequestException(
-          `Missing return entries for the following event items: ${missingItems
-            .map((item) => item.id)
-            .join(', ')}`,
-        );
-      }
-
       const returns: Return[] = [];
 
       for (const item of createReturnDto.items) {
@@ -106,21 +87,53 @@ export class ReturnService {
           continue;
         }
 
-        if (item.returnedQuantity > eventItem.quantity) {
-          throw new BadRequestException(
-            `Cannot return more items than borrowed. Requested: ${item.returnedQuantity}, Borrowed: ${eventItem.quantity}`,
-          );
+        const existingReturn = await entityManager
+          .createQueryBuilder(Return, 'return')
+          .leftJoinAndSelect('return.eventItem', 'eventItem')
+          .leftJoinAndSelect('return.material', 'material')
+          .leftJoinAndSelect('return.rentalMaterial', 'rentalMaterial')
+          .where('return.event = :eventId', { eventId: event.id })
+          .andWhere('eventItem.id = :eventItemId', {
+            eventItemId: eventItem.id,
+          })
+          .getOne();
+
+        let returnRecord: Return;
+
+        if (existingReturn) {
+          const newTotalReturned =
+            existingReturn.returnedQuantity + item.returnedQuantity;
+
+          if (newTotalReturned > eventItem.quantity) {
+            throw new BadRequestException(
+              `Cannot return more items than borrowed. Total returned would be: ${newTotalReturned}, Original: ${eventItem.quantity}`,
+            );
+          }
+
+          returnRecord = existingReturn;
+          returnRecord.returnedQuantity = newTotalReturned;
+          returnRecord.remainingQuantity =
+            eventItem.quantity - newTotalReturned;
+          returnRecord.status =
+            returnRecord.remainingQuantity === 0 ? 'complete' : 'incomplete';
+        } else {
+          if (item.returnedQuantity > eventItem.quantity) {
+            throw new BadRequestException(
+              `Cannot return more items than borrowed. Requested: ${item.returnedQuantity}, Borrowed: ${eventItem.quantity}`,
+            );
+          }
+
+          const remainingQuantity = eventItem.quantity - item.returnedQuantity;
+
+          returnRecord = entityManager.create(Return, {
+            event,
+            user,
+            eventItem,
+            returnedQuantity: item.returnedQuantity,
+            remainingQuantity,
+            status: remainingQuantity === 0 ? 'complete' : 'incomplete',
+          });
         }
-
-        const remainingQuantity = eventItem.quantity - item.returnedQuantity;
-
-        const returnRecord = entityManager.create(Return, {
-          event,
-          user,
-          returnedQuantity: item.returnedQuantity,
-          remainingQuantity,
-          status: remainingQuantity === 0 ? 'complete' : 'incomplete',
-        });
 
         if (eventItem.material) {
           const material = await entityManager.findOne(Material, {
@@ -144,15 +157,38 @@ export class ReturnService {
           }
         }
 
+        await entityManager.save(Return, returnRecord);
         returns.push(returnRecord);
       }
 
-      await entityManager.save(Return, returns);
+      const allEventItemReturns = await entityManager
+        .createQueryBuilder(Return, 'return')
+        .leftJoinAndSelect('return.eventItem', 'eventItem')
+        .where('return.event = :eventId', { eventId: event.id })
+        .getMany();
 
-      const allReturnsComplete = returns.every((r) => r.status === 'complete');
+      const allReturnsComplete = allEventItemReturns.every(
+        (r) => r.status === 'complete',
+      );
+
       if (allReturnsComplete) {
         event.status = 'closed';
-        await entityManager.save(Event, event);
+        await this.entityManager.save(Event, event);
+
+        if (event.status === 'closed') {
+          const report = await this.reportService.closedEventReport(event);
+          await this.mailService.sendEventReport({
+            name: report.name,
+            customerName: report.customerName,
+            customerEmail: report.customerEmail,
+            eventId: report.eventId,
+            eventDate: report.eventDate,
+            totalIncome: report.totalIncome,
+            itemizedExpenses: report.itemizedExpenses,
+            employeeFee: report.employeeFee,
+            totalExpense: report.totalExpense,
+          });
+        }
       }
 
       await queryRunner.commitTransaction();
@@ -174,7 +210,9 @@ export class ReturnService {
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(error.message);
+      throw error instanceof HttpException
+        ? error
+        : new InternalServerErrorException(error.message);
     } finally {
       await queryRunner.release();
     }
