@@ -66,6 +66,25 @@ export class EventsController {
     return this.eventsService.create(createEventDto, json.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('eventItems')
+  @ApiOperation({ summary: 'Get all events items' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all events items.',
+  })
+  async getEventItems(
+    @Req() request: Request,
+    @Query() paginationQuery: PaginationQueryDto,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.eventsService.eventItems(json.userId, paginationQuery);
+  }
+
   @Get('event-details/:id')
   @ApiOperation({ summary: 'Get event by ID' })
   async eventDetails(
