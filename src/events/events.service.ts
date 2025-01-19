@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
@@ -416,5 +417,45 @@ export class EventsService {
     }
 
     await this.entityManager.save(Event, event);
+  }
+
+  async eventItems(userId: string, paginationQuery: PaginationQueryDto) {
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: userId },
+    });
+    if (!admin) {
+      throw new UnauthorizedException();
+    }
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins are allowed to update event status',
+      );
+    }
+
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+
+    // const [events, totalCount] = await this.entityManager.findAndCount(Event, {
+    //   where: { user: { id: employee.id } },
+    //   take,
+    //   skip,
+    //   relations: [
+    //     'eventItems',
+    //     'eventItems.material',
+    //     'eventItems.rentalMaterial',
+    //   ],
+    // });
+
+    const [events, totalCount] = await this.entityManager.findAndCount(
+      EventItem,
+      {
+        take,
+        skip,
+        relations: ['material', 'rentalMaterial'],
+      },
+    );
+
+    return this.baseService.paginate(events, totalCount, paginationQuery);
   }
 }
