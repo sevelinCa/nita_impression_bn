@@ -259,6 +259,7 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
+        'user'
       ],
     });
 

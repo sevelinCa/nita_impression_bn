@@ -319,6 +319,7 @@ export class ReturnService {
       {
         take,
         skip,
+        relations: ["event" ,"material" , "rentalMaterial"]
       },
     );
 
