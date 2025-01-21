@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsDate,
   IsNumber,
   IsArray,
   ValidateNested,
@@ -10,9 +9,10 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class EventItemDto {
+// DTO for adding items (material, rental, or custom items)
+export class AddEventItemDto {
   @ApiPropertyOptional({
-    description: 'ID of the material',
+    description: 'ID of the material to add',
     type: String,
     example: 'mat-12345',
   })
@@ -22,7 +22,7 @@ class EventItemDto {
   materialId?: string;
 
   @ApiPropertyOptional({
-    description: 'ID of the rental material',
+    description: 'ID of the rental material to add',
     type: String,
     example: 'rent-54321',
   })
@@ -67,9 +67,10 @@ class EventItemDto {
   type?: 'returnable' | 'non-returnable';
 }
 
-class EmployeeDto {
+// DTO for adding employees
+export class AddEmployeeDto {
   @ApiPropertyOptional({
-    description: 'ID of the employee',
+    description: 'ID of the employee to add',
     type: String,
     example: '044233db-cce3-404b-a12f-6732b7b596f5',
   })
@@ -78,7 +79,7 @@ class EmployeeDto {
   employeeId?: string;
 
   @ApiPropertyOptional({
-    description: 'Full name of the employee (if not registered)',
+    description: 'Full name of the new employee (if not registered)',
     type: String,
     example: 'John Doe',
   })
@@ -87,56 +88,34 @@ class EmployeeDto {
   employeeFullNames?: string;
 }
 
-export class CreateEventDto {
-  @ApiProperty({
-    description: 'Name of the event',
-    type: String,
-    example: 'Wedding Party',
-  })
-  @IsString()
-  name: string;
-
-  @ApiProperty({
-    description: 'Date of the event',
-    type: String,
-    format: 'date-time',
-    example: '2025-01-01T10:00:00Z',
-  })
-  @IsDate()
-  @Type(() => Date)
-  date: Date;
-
-  @ApiProperty({
-    description: 'Address of the event',
-    type: String,
-    example: '123 Main Street, Kigali',
-  })
-  @IsString()
-  address: string;
-
-  @ApiProperty({
-    description: 'Total cost of the event',
+// Main update DTO
+export class UpdateEventDto {
+  @ApiPropertyOptional({
+    description: 'Employee fee for the event',
     type: Number,
-    example: 5000.75,
+    example: 200,
   })
   @IsNumber()
-  cost: number;
+  @IsOptional()
+  employeeFee?: number;
 
-  @ApiProperty({
-    description: 'List of employees working at the event',
-    type: [EmployeeDto],
+  @ApiPropertyOptional({
+    description: 'New employees to add to the event',
+    type: [AddEmployeeDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => EmployeeDto)
-  employees: EmployeeDto[];
+  @Type(() => AddEmployeeDto)
+  @IsOptional()
+  addEmployees?: AddEmployeeDto[];
 
-  @ApiProperty({
-    description: 'List of items associated with the event',
-    type: [EventItemDto],
+  @ApiPropertyOptional({
+    description: 'New items to add to the event',
+    type: [AddEventItemDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => EventItemDto)
-  items: EventItemDto[];
+  @Type(() => AddEventItemDto)
+  @IsOptional()
+  addItems?: AddEventItemDto[];
 }

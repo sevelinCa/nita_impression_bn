@@ -2,9 +2,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
+  ManyToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './User.entity';
 import { EventItem } from './EventItem';
@@ -36,15 +37,14 @@ export class Event {
   @Column()
   address: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.events, { nullable: false })
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @ManyToMany(() => User, (user) => user.events)
+  users: User[];
 
   @OneToMany(() => EventItem, (eventItem) => eventItem.event)
   eventItems: EventItem[];

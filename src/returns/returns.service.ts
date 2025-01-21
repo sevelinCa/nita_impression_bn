@@ -52,7 +52,7 @@ export class ReturnService {
       const event = await entityManager.findOne(Event, {
         where: {
           id: createReturnDto.eventId,
-          user: { id: createReturnDto.employeeId },
+          users: { id: createReturnDto.employeeId },
         },
         relations: [
           'eventItems',
@@ -63,6 +63,10 @@ export class ReturnService {
 
       if (!event) {
         throw new NotFoundException('Event not found or unauthorized');
+      }
+
+      if (event.employeeFee <= 0) {
+        throw new ForbiddenException('Employee fee is not set');
       }
 
       if (event.status !== 'done') {
@@ -319,7 +323,7 @@ export class ReturnService {
       {
         take,
         skip,
-        relations: ["event" ,"material" , "rentalMaterial"]
+        relations: ['event', 'material', 'rentalMaterial'],
       },
     );
 

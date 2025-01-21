@@ -16,6 +16,7 @@ import { User } from 'src/typeorm/entities/User.entity';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { BaseService } from 'src/base.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 
 interface ConsolidatedItem {
   materialId?: string;
@@ -82,31 +83,58 @@ export class EventsService {
       if (user.role !== 'admin')
         throw new ForbiddenException('Only admin is allowed to view materials');
 
-      const employee = await this.entityManager.findOne(User, {
-        where: { id: createEventDto.employeeId },
-      });
+      const employees = await Promise.all(
+        createEventDto.employees.map(async (emp) => {
+          if (emp.employeeId && emp.employeeFullNames) {
+            throw new BadRequestException(
+              `You must provide either employeeId or employeeFullNames, not both.`,
+            );
+          }
 
-      if (employee === null) {
-        throw new NotFoundException('Employee Not Found');
-      }
+          let employee: User;
 
-      if (employee.role !== 'worker') {
-        throw new NotFoundException(
-          'only worker can be assigned to event buddy',
-        );
-      }
+          if (emp.employeeId) {
+            employee = await this.entityManager.findOne(User, {
+              where: { id: emp.employeeId },
+            });
 
-      const event = entityManager.create(Event, {
+            if (!employee) {
+              throw new NotFoundException(
+                `Employee with ID ${emp.employeeId} not found.`,
+              );
+            }
+
+            if (employee.role !== 'worker') {
+              throw new BadRequestException(
+                `Only workers can be assigned to events. Invalid role for employee ID: ${emp.employeeId}`,
+              );
+            }
+          } else if (emp.employeeFullNames) {
+            employee = this.entityManager.create(User, {
+              fullName: emp.employeeFullNames,
+              role: 'worker',
+            });
+            await this.entityManager.save(User, employee);
+          } else {
+            throw new BadRequestException(
+              `You must provide either employeeId or employeeFullNames.`,
+            );
+          }
+
+          return employee;
+        }),
+      );
+      const event = this.entityManager.create(Event, {
         name: createEventDto.name,
         date: createEventDto.date,
         address: createEventDto.address,
         status: 'planning',
         cost: createEventDto.cost,
-        employeeFee: createEventDto.employeeFee,
-        user: employee,
+        employeeFee: 0,
+        users: employees,
       });
 
-      await entityManager.save(Event, event);
+      await this.entityManager.save(Event, event);
 
       const eventItems: EventItem[] = [];
 
@@ -245,6 +273,232 @@ export class EventsService {
     }
   }
 
+  async update(
+    eventId: string,
+    updateEventDto: UpdateEventDto,
+    userId: string,
+  ): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const entityManager = queryRunner.manager;
+
+      const user = await this.entityManager.findOne(User, {
+        where: { id: userId },
+      });
+      if (!user) throw new NotFoundException('User Not Found');
+
+      if (user.role !== 'admin') {
+        throw new ForbiddenException('Only admin can update events');
+      }
+
+      const event = await entityManager.findOne(Event, {
+        where: { id: eventId },
+      });
+      if (!event) {
+        throw new NotFoundException(`Event with ID ${eventId} not found`);
+      }
+      if (updateEventDto.employeeFee) {
+        event.employeeFee = updateEventDto.employeeFee;
+      }
+
+      if (updateEventDto.addEmployees) {
+        const eventWithUsers = await this.entityManager.findOne(Event, {
+          where: { id: event.id },
+          relations: ['users'],
+        });
+
+        if (!eventWithUsers) {
+          throw new NotFoundException(`Event with ID ${event.id} not found`);
+        }
+
+        eventWithUsers.users = eventWithUsers.users || [];
+
+        const newEmployees = await Promise.all(
+          updateEventDto.addEmployees.map(async (emp) => {
+            if (emp.employeeId && emp.employeeFullNames) {
+              throw new BadRequestException(
+                'Provide either employeeId or employeeFullNames, not both',
+              );
+            }
+
+            let employee: User;
+
+            if (emp.employeeId) {
+              employee = await this.entityManager.findOne(User, {
+                where: { id: emp.employeeId },
+              });
+
+              if (!employee) {
+                throw new NotFoundException(
+                  `Employee with ID ${emp.employeeId} not found`,
+                );
+              }
+
+              if (employee.role !== 'worker') {
+                throw new BadRequestException(`Employee role must be 'worker'`);
+              }
+
+              if (
+                eventWithUsers.users.some((user) => user.id === emp.employeeId)
+              ) {
+                throw new BadRequestException(
+                  `Employee with ID ${emp.employeeId} is already assigned to this event`,
+                );
+              }
+            } else if (emp.employeeFullNames) {
+              employee = this.entityManager.create(User, {
+                fullName: emp.employeeFullNames,
+                role: 'worker',
+              });
+              await this.entityManager.save(User, employee);
+            } else {
+              throw new BadRequestException(
+                'Provide either employeeId or employeeFullNames',
+              );
+            }
+
+            return employee;
+          }),
+        );
+        eventWithUsers.users.push(...newEmployees);
+        await this.entityManager.save(Event, eventWithUsers);
+      }
+
+      if (updateEventDto.addItems) {
+        const newItems: EventItem[] = [];
+        const consolidatedItems = this.consolidateItems(
+          updateEventDto.addItems,
+        );
+
+        for (const item of consolidatedItems) {
+          if (item.materialId && item.rentalMaterialId) {
+            throw new BadRequestException(
+              'An item cannot have both materialId and rentalMaterialId',
+            );
+          }
+
+          if (!item.materialId && !item.rentalMaterialId) {
+            if (!item.names || !item.price || !item.quantity || !item.type) {
+              throw new BadRequestException(
+                'Item must include names, price, quantity, and type if materialId and rentalMaterialId are not provided',
+              );
+            }
+          }
+
+          const eventItem = entityManager.create(EventItem, {
+            event,
+            quantity: item.quantity,
+            names: item.names,
+            price: item.price,
+            type: item.type,
+          });
+
+          if (item.type === 'returnable') {
+            const returnableMaterial = entityManager.create(Material, {
+              name: item.names,
+              quantity: item.quantity,
+              price: item.price,
+            });
+            eventItem.material = returnableMaterial;
+            await entityManager.save(Material, returnableMaterial);
+          }
+
+          if (item.materialId) {
+            const material = await entityManager.findOne(Material, {
+              where: { id: item.materialId },
+            });
+
+            if (!material) {
+              throw new NotFoundException(
+                `Material with ID ${item.materialId} not found`,
+              );
+            }
+
+            if (material.quantity < item.quantity) {
+              throw new BadRequestException(
+                `Insufficient stock for material ${material.name}. Available: ${material.quantity}, Requested: ${item.quantity}`,
+              );
+            }
+
+            const existingMaterial = await entityManager.findOne(EventItem, {
+              where: { event: { id: event.id }, material: { id: material.id } },
+              relations: ['material'],
+            });
+
+            if (existingMaterial) {
+              throw new BadRequestException(
+                `Material with ID ${item.materialId} is already part of this event`,
+              );
+            }
+
+            material.quantity -= item.quantity;
+            await entityManager.save(Material, material);
+
+            eventItem.material = material;
+          }
+
+          if (item.rentalMaterialId) {
+            const rentalMaterial = await entityManager.findOne(RentalMaterial, {
+              where: { id: item.rentalMaterialId },
+            });
+
+            if (!rentalMaterial) {
+              throw new NotFoundException(
+                `Rental material with ID ${item.rentalMaterialId} not found`,
+              );
+            }
+
+            if (rentalMaterial.quantity < item.quantity) {
+              throw new BadRequestException(
+                `Insufficient stock for rental material ${rentalMaterial.name}. Available: ${rentalMaterial.quantity}, Requested: ${item.quantity}`,
+              );
+            }
+
+            const existingRentalMaterial = await entityManager.findOne(
+              EventItem,
+              {
+                where: {
+                  event: { id: event.id },
+                  rentalMaterial: { id: rentalMaterial.id },
+                },
+                relations: ['rentalMaterial'],
+              },
+            );
+
+            if (existingRentalMaterial) {
+              throw new BadRequestException(
+                `Rental material with ID ${item.rentalMaterialId} is already part of this event`,
+              );
+            }
+
+            rentalMaterial.quantity -= item.quantity;
+            await entityManager.save(RentalMaterial, rentalMaterial);
+
+            eventItem.rentalMaterial = rentalMaterial;
+          }
+
+          newItems.push(eventItem);
+        }
+
+        await entityManager.save(EventItem, newItems);
+      }
+
+      await entityManager.save(Event, event);
+
+      await queryRunner.commitTransaction();
+
+      return { message: 'Event updated successfully', event };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async eventDetails(eventId: string, userId: string) {
     const user = await this.entityManager.findOne(User, {
       where: { id: userId },
@@ -260,7 +514,7 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
-        'user'
+        'users',
       ],
     });
 
@@ -285,7 +539,7 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
-        "user"
+        'users',
       ],
     });
 
@@ -325,7 +579,7 @@ export class EventsService {
       this.baseService.initializePagination(paginationQuery);
 
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
-      where: { user: { id: employee.id } },
+      where: { users: { id: employee.id } },
       take,
       skip,
       relations: [

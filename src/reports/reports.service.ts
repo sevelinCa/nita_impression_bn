@@ -64,7 +64,7 @@ export class ReportsService {
         'eventItems',
         'eventItems.rentalMaterial',
         'eventItems.material',
-        'user',
+        'users',
       ],
     });
     if (!event) {
@@ -101,7 +101,7 @@ export class ReportsService {
     }
 
     return {
-      name: event.user.fullName,
+      name: event?.users[0] ? event.users[0].fullName : 'Unknown User',
       eventId: event.id,
       eventDate: event.date,
       customerName: admin.fullName,

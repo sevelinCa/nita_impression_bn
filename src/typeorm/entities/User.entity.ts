@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Event } from './Event.entity';
 
 @Entity('users')
@@ -6,19 +14,19 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ length: 255, nullable: true })
   fullName: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, length: 255, nullable: true })
   email: string;
 
   @Column({ nullable: true })
   password: string;
 
-  @Column({ default: 'worker' })
+  @Column({ default: 'worker', length: 50 })
   role: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 15 })
   phoneNumber: string;
 
   @Column({ nullable: true })
@@ -27,21 +35,22 @@ export class User {
   @Column('int', { nullable: true })
   age: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 255 })
   address: string;
 
   @Column({ nullable: true })
   resetPasswordToken: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'timestamp' })
   resetPasswordExpires: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Event, (event) => event.user)
+  @ManyToMany(() => Event, (event) => event.users)
+  @JoinTable()
   events: Event[];
 }
