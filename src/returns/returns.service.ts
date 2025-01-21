@@ -42,17 +42,10 @@ export class ReturnService {
       if (!admin || admin.role !== 'admin') {
         throw new ForbiddenException('Only admins can process returns');
       }
-      const user = await entityManager.findOne(User, {
-        where: { id: createReturnDto.employeeId },
-      });
-      if (!user) {
-        throw new NotFoundException('Employee Not Found');
-      }
 
       const event = await entityManager.findOne(Event, {
         where: {
           id: createReturnDto.eventId,
-          users: { id: createReturnDto.employeeId },
         },
         relations: [
           'eventItems',
@@ -77,6 +70,7 @@ export class ReturnService {
 
       const returns: Return[] = [];
 
+      // Process returns
       for (const item of createReturnDto.items) {
         const eventItem = event.eventItems.find(
           (ei) => ei.id === item.eventItemId,
@@ -87,7 +81,9 @@ export class ReturnService {
           );
         }
 
-        if (eventItem.type === 'non-returnable') {
+        // Consider item as returnable if it has either material or rentalMaterial
+        const isReturnable = eventItem.material || eventItem.rentalMaterial;
+        if (!isReturnable) {
           continue;
         }
 
@@ -131,7 +127,6 @@ export class ReturnService {
 
           returnRecord = entityManager.create(Return, {
             event,
-            user,
             eventItem,
             returnedQuantity: item.returnedQuantity,
             remainingQuantity,
@@ -165,34 +160,55 @@ export class ReturnService {
         returns.push(returnRecord);
       }
 
-      const allEventItemReturns = await entityManager
-        .createQueryBuilder(Return, 'return')
-        .leftJoinAndSelect('return.eventItem', 'eventItem')
-        .where('return.event = :eventId', { eventId: event.id })
-        .getMany();
-
-      const allReturnsComplete = allEventItemReturns.every(
-        (r) => r.status === 'complete',
+      // Get all returnable items (those with material or rentalMaterial)
+      const returnableItems = event.eventItems.filter(
+        (item) => item.material || item.rentalMaterial,
       );
 
-      if (allReturnsComplete) {
+      // Get remaining items to return
+      const remainingItems = [];
+      for (const item of returnableItems) {
+        const itemReturns = await entityManager
+          .createQueryBuilder(Return, 'return')
+          .where('return.event = :eventId', { eventId: event.id })
+          .andWhere('return.eventItem = :eventItemId', { eventItemId: item.id })
+          .getMany();
+
+        const totalReturned = itemReturns.reduce(
+          (sum, r) => sum + r.returnedQuantity,
+          0,
+        );
+
+        if (totalReturned < item.quantity) {
+          remainingItems.push({
+            itemId: item.id,
+            name: item.material?.name || item.rentalMaterial?.name,
+            totalQuantity: item.quantity,
+            returnedQuantity: totalReturned,
+            remainingQuantity: item.quantity - totalReturned,
+            type: item.material ? 'material' : 'rental',
+            materialId: item.material?.id || item.rentalMaterial?.id,
+          });
+        }
+      }
+
+      // Only close if ALL returnable items are fully returned
+      if (remainingItems.length === 0) {
         event.status = 'closed';
         await this.entityManager.save(Event, event);
 
-        if (event.status === 'closed') {
-          const report = await this.reportService.closedEventReport(event);
-          await this.mailService.sendEventReport({
-            name: report.name,
-            customerName: report.customerName,
-            customerEmail: report.customerEmail,
-            eventId: report.eventId,
-            eventDate: report.eventDate,
-            totalIncome: report.totalIncome,
-            itemizedExpenses: report.itemizedExpenses,
-            employeeFee: report.employeeFee,
-            totalExpense: report.totalExpense,
-          });
-        }
+        const report = await this.reportService.closedEventReport(event);
+        await this.mailService.sendEventReport({
+          name: report.name,
+          customerName: report.customerName,
+          customerEmail: report.customerEmail,
+          eventId: report.eventId,
+          eventDate: report.eventDate,
+          totalIncome: report.totalIncome,
+          itemizedExpenses: report.itemizedExpenses,
+          employeeFee: report.employeeFee,
+          totalExpense: report.totalExpense,
+        });
       }
 
       await queryRunner.commitTransaction();
@@ -211,6 +227,13 @@ export class ReturnService {
           materialId: r.material?.id,
           rentalMaterialId: r.rentalMaterial?.id,
         })),
+        remainingItems:
+          remainingItems.length > 0
+            ? {
+                count: remainingItems.length,
+                items: remainingItems,
+              }
+            : null,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -221,7 +244,6 @@ export class ReturnService {
       await queryRunner.release();
     }
   }
-
   async getReturns(userId: string, adminId: string) {
     const admin = await this.entityManager.findOne(User, {
       where: { id: adminId },

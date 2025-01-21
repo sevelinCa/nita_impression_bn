@@ -46,14 +46,6 @@ export class CreateReturnDto {
   eventId: string;
 
   @ApiProperty({
-    description: 'unique identifier of an employee',
-    example: 'a7d2346e-f9bd-4d9b-ae87-78c9a5f3bdda',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  employeeId: string;
-
-  @ApiProperty({
     description:
       'List of items being returned with their respective quantities',
     type: [ReturnItemDto],

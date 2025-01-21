@@ -176,4 +176,81 @@ export class ReportsService {
 
     return monthlyReports;
   }
+
+  async getEventsByDateRange(startDate: Date, endDate: Date, userId: string) {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User Not Found');
+
+    if (user.role !== 'admin')
+      throw new ForbiddenException('Only admin is allowed to view materials');
+    const formattedStartDate = startDate.toISOString();
+    const formattedEndDate = endDate.toISOString();
+
+    const events = await this.entityManager
+      .getRepository(Event)
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.eventItems', 'eventItems')
+      .leftJoinAndSelect('eventItems.rentalMaterial', 'rentalMaterial')
+      .leftJoinAndSelect('eventItems.material', 'material')
+      .leftJoinAndSelect('event.users', 'users')
+      .where('event.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+      })
+      .getMany();
+
+    if (!events) {
+      throw new Error('No events found within the given date range.');
+    }
+
+    const eventReports = events
+      .filter((event) => event.status !== 'cancelled')
+      .map((event) => {
+        let totalExpense = event.employeeFee || 0;
+
+        for (const eventItem of event.eventItems) {
+          if (eventItem.price) {
+            totalExpense += eventItem.price * eventItem.quantity;
+          }
+          if (eventItem.rentalMaterial) {
+            totalExpense +=
+              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+          }
+        }
+
+        return {
+          eventId: event.id,
+          eventName: event.name,
+          eventDate: event.date,
+          totalIncome: event.cost,
+          totalExpense: totalExpense,
+          netProfit: event.cost - totalExpense,
+        };
+      });
+
+    const totals = eventReports.reduce(
+      (acc, event) => {
+        return {
+          totalIncome: acc.totalIncome + event.totalIncome,
+          totalExpense: acc.totalExpense + event.totalExpense,
+          netProfit: acc.netProfit + event.netProfit,
+        };
+      },
+      {
+        totalIncome: 0,
+        totalExpense: 0,
+        netProfit: 0,
+      },
+    );
+
+    return {
+      events: eventReports,
+      summary: {
+        totalEvents: eventReports.length,
+        ...totals,
+      },
+    };
+  }
 }

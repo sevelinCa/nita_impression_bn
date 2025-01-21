@@ -4,7 +4,7 @@ import { IsEnum } from 'class-validator';
 export class ChangeStatusDto {
   @ApiProperty({
     description: 'The status of the event',
-    enum: ['ongoing', 'done', 'closed', 'cancelled'],
+    enum: ['ongoing', 'done', 'cancelled'],
     example: 'ongoing',
   })
   @IsEnum(['ongoing', 'done', 'cancelled'], {
