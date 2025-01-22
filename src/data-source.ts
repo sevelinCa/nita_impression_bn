@@ -6,10 +6,6 @@ import { Category } from './typeorm/entities/Category.entity';
 import { Event } from './typeorm/entities/Event.entity';
 import { EventItem } from './typeorm/entities/EventItem';
 import { Return } from './typeorm/entities/Return.entity';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
-
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DATABASE_HOST,
