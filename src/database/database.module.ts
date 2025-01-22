@@ -30,7 +30,9 @@ import { ConfigModule } from '@nestjs/config';
         EventItem,
         Return,
       ],
-      synchronize: true,
+      synchronize: false,
+      migrations: ['dist/migrations/*.js'],
+      migrationsRun: true,
     }),
     TypeOrmModule.forFeature([
       User,
