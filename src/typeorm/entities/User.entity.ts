@@ -51,6 +51,10 @@ export class User {
   updatedAt: Date;
 
   @ManyToMany(() => Event, (event) => event.users)
-  @JoinTable()
+  @JoinTable({
+    name: 'events_users',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'eventId', referencedColumnName: 'id' },
+  })
   events: Event[];
 }

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
+import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { CreateEventDto } from './dto/create-event.dto';

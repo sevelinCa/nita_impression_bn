@@ -5,7 +5,7 @@ import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { Category } from 'src/typeorm/entities/Category.entity';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
+import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Return } from 'src/typeorm/entities/Return.entity';
 import { ConfigModule } from '@nestjs/config';
 

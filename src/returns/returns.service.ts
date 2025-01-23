@@ -244,48 +244,6 @@ export class ReturnService {
       await queryRunner.release();
     }
   }
-  async getReturns(userId: string, adminId: string) {
-    const admin = await this.entityManager.findOne(User, {
-      where: { id: adminId },
-    });
-    if (admin === null) throw new NotFoundException('User Not Found');
-
-    if (admin.role !== 'admin') {
-      throw new ForbiddenException(
-        'Only admin is allowed to access this endpoint',
-      );
-    }
-    const user = await this.entityManager.findOne(User, {
-      where: { id: userId },
-    });
-    if (!user) throw new NotFoundException('User not found');
-
-    const returns = await this.entityManager.find(Return, {
-      where: { user: { id: userId } },
-      relations: ['event', 'material', 'rentalMaterial'],
-    });
-
-    return returns.map((r) => ({
-      id: r.id,
-      eventName: r.event.name,
-      returnedQuantity: r.returnedQuantity,
-      remainingQuantity: r.remainingQuantity,
-      status: r.status,
-      material: r.material
-        ? {
-            id: r.material.id,
-            name: r.material.name,
-          }
-        : null,
-      rentalMaterial: r.rentalMaterial
-        ? {
-            id: r.rentalMaterial.id,
-            name: r.rentalMaterial.name,
-          }
-        : null,
-      createdAt: r.createdAt,
-    }));
-  }
 
   async getReturnsByEvent(eventId: string, userId: string) {
     const user = await this.entityManager.findOne(User, {

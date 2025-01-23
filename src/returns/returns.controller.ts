@@ -80,25 +80,6 @@ export class ReturnsController {
     return this.returnsService.createReturn(createReturnDto, decoded.userId);
   }
 
-  @Get(':userId')
-  @ApiOperation({ summary: 'Get all returns for the worker' })
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'List of returns retrieved successfully',
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not a worker' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getReturns(
-    @Req() request: Request,
-    @Param('userId', ParseUUIDPipe) userId: string,
-  ) {
-    const token = request.headers.authorization.replace('Bearer ', '');
-    const decoded = this.jwtService.decode(token, { json: true }) as {
-      userId: string;
-    };
-    return this.returnsService.getReturns(userId, decoded.userId);
-  }
 
   @UseGuards(JwtAuthGuard)
   @Get('event/:eventId')
