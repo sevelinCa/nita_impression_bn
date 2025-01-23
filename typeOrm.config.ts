@@ -29,3 +29,4 @@ const dataSource = new DataSource({
 });
 
 export default dataSource;
+//migrations: ['dist/src/migrations/*.js'],

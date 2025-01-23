@@ -109,15 +109,18 @@ export class CreateUser1737618172469 implements MigrationInterface {
       true,
     );
 
-    await queryRunner.createForeignKey(
-      'events_users',
-      new TableForeignKey({
-        columnNames: ['eventId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'events',
-        onDelete: 'CASCADE',
-      }),
-    );
+    const eventsTableExists = await queryRunner.hasTable('events');
+    if (eventsTableExists) {
+      await queryRunner.createForeignKey(
+        'events_users',
+        new TableForeignKey({
+          columnNames: ['eventId'],
+          referencedColumnNames: ['id'],
+          referencedTableName: 'events',
+          onDelete: 'CASCADE',
+        }),
+      );
+    }
 
     await queryRunner.createForeignKey(
       'events_users',

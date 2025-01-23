@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -79,7 +78,6 @@ export class ReturnsController {
     };
     return this.returnsService.createReturn(createReturnDto, decoded.userId);
   }
-
 
   @UseGuards(JwtAuthGuard)
   @Get('event/:eventId')
