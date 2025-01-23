@@ -690,17 +690,6 @@ export class EventsService {
     const { skip, take } =
       this.baseService.initializePagination(paginationQuery);
 
-    // const [events, totalCount] = await this.entityManager.findAndCount(Event, {
-    //   where: { user: { id: employee.id } },
-    //   take,
-    //   skip,
-    //   relations: [
-    //     'eventItems',
-    //     'eventItems.material',
-    //     'eventItems.rentalMaterial',
-    //   ],
-    // });
-
     const [events, totalCount] = await this.entityManager.findAndCount(
       EventItem,
       {

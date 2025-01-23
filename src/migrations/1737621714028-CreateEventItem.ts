@@ -7,7 +7,6 @@ import {
 
 export class CreateEventItems1737628901123 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'eventItems' table
     await queryRunner.createTable(
       new Table({
         name: 'eventItems',
@@ -71,7 +70,6 @@ export class CreateEventItems1737628901123 implements MigrationInterface {
       true,
     );
 
-    // Add foreign key for 'eventId' if the 'events' table exists
     const eventsTableExists = await queryRunner.hasTable('events');
     if (eventsTableExists) {
       await queryRunner.createForeignKey(
@@ -85,7 +83,6 @@ export class CreateEventItems1737628901123 implements MigrationInterface {
       );
     }
 
-    // Add foreign key for 'materialId' if the 'materials' table exists
     const materialsTableExists = await queryRunner.hasTable('materials');
     if (materialsTableExists) {
       await queryRunner.createForeignKey(
@@ -99,7 +96,6 @@ export class CreateEventItems1737628901123 implements MigrationInterface {
       );
     }
 
-    // Add foreign key for 'rentalMaterialId' if the 'rentalMaterials' table exists
     const rentalMaterialsTableExists =
       await queryRunner.hasTable('rentalMaterials');
     if (rentalMaterialsTableExists) {
@@ -115,7 +111,6 @@ export class CreateEventItems1737628901123 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign keys and 'eventItems' table
     const table = await queryRunner.getTable('eventItems');
     if (table) {
       const eventForeignKey = table.foreignKeys.find(

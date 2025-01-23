@@ -7,7 +7,6 @@ import {
 
 export class CreateRentalMaterials1737634567890 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'rental_materials' table
     await queryRunner.createTable(
       new Table({
         name: 'rental_materials',
@@ -31,7 +30,7 @@ export class CreateRentalMaterials1737634567890 implements MigrationInterface {
           {
             name: 'rentingCost',
             type: 'decimal',
-            precision: 10, // Adjust precision/scale as necessary
+            precision: 10,
             scale: 2,
           },
           {
@@ -75,7 +74,6 @@ export class CreateRentalMaterials1737634567890 implements MigrationInterface {
       true,
     );
 
-    // Add foreign key for 'categoryId' referencing 'categories.id'
     await queryRunner.createForeignKey(
       'rental_materials',
       new TableForeignKey({
@@ -88,7 +86,6 @@ export class CreateRentalMaterials1737634567890 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign keys and 'rental_materials' table
     const table = await queryRunner.getTable('rental_materials');
     if (table) {
       const categoryForeignKey = table.foreignKeys.find(

@@ -70,7 +70,6 @@ export class ReturnService {
 
       const returns: Return[] = [];
 
-      // Process returns
       for (const item of createReturnDto.items) {
         const eventItem = event.eventItems.find(
           (ei) => ei.id === item.eventItemId,
@@ -81,7 +80,6 @@ export class ReturnService {
           );
         }
 
-        // Consider item as returnable if it has either material or rentalMaterial
         const isReturnable = eventItem.material || eventItem.rentalMaterial;
         if (!isReturnable) {
           continue;
@@ -160,12 +158,10 @@ export class ReturnService {
         returns.push(returnRecord);
       }
 
-      // Get all returnable items (those with material or rentalMaterial)
       const returnableItems = event.eventItems.filter(
         (item) => item.material || item.rentalMaterial,
       );
 
-      // Get remaining items to return
       const remainingItems = [];
       for (const item of returnableItems) {
         const itemReturns = await entityManager
@@ -191,8 +187,6 @@ export class ReturnService {
           });
         }
       }
-
-      // Only close if ALL returnable items are fully returned
       if (remainingItems.length === 0) {
         event.status = 'closed';
         await this.entityManager.save(Event, event);

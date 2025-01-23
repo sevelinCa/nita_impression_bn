@@ -7,7 +7,6 @@ import {
 
 export class CreateUser1737618172469 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'users' table
     await queryRunner.createTable(
       new Table({
         name: 'users',
@@ -91,7 +90,6 @@ export class CreateUser1737618172469 implements MigrationInterface {
       true,
     );
 
-    // Create 'events_users' table for the many-to-many relationship
     await queryRunner.createTable(
       new Table({
         name: 'events_users',
@@ -111,7 +109,6 @@ export class CreateUser1737618172469 implements MigrationInterface {
       true,
     );
 
-    // Add foreign key for 'events_users.eventId' referencing 'events.id'
     await queryRunner.createForeignKey(
       'events_users',
       new TableForeignKey({
@@ -122,7 +119,6 @@ export class CreateUser1737618172469 implements MigrationInterface {
       }),
     );
 
-    // Add foreign key for 'events_users.userId' referencing 'users.id'
     await queryRunner.createForeignKey(
       'events_users',
       new TableForeignKey({
@@ -135,7 +131,6 @@ export class CreateUser1737618172469 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign keys first
     const table = await queryRunner.getTable('events_users');
     if (table) {
       const eventForeignKey = table.foreignKeys.find(
@@ -153,10 +148,8 @@ export class CreateUser1737618172469 implements MigrationInterface {
       }
     }
 
-    // Drop 'events_users' table
     await queryRunner.dropTable('events_users');
 
-    // Drop 'users' table
     await queryRunner.dropTable('users');
   }
 }

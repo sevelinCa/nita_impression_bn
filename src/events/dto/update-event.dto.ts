@@ -9,7 +9,6 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-// DTO for adding items (material, rental, or custom items)
 export class AddEventItemDto {
   @ApiPropertyOptional({
     description: 'ID of the material to add',
@@ -67,7 +66,6 @@ export class AddEventItemDto {
   type?: 'returnable' | 'non-returnable';
 }
 
-// DTO for adding employees
 export class AddEmployeeDto {
   @ApiPropertyOptional({
     description: 'ID of the employee to add',
@@ -88,7 +86,6 @@ export class AddEmployeeDto {
   employeeFullNames?: string;
 }
 
-// Main update DTO
 export class UpdateEventDto {
   @ApiPropertyOptional({
     description: 'Employee fee for the event',

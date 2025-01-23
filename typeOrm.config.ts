@@ -24,7 +24,7 @@ const dataSource = new DataSource({
     EventItem,
     Return,
   ],
-  migrations: ['dist/migrations/*.js'],
+  migrations: ['dist/src/migrations/*.js'],
   synchronize: false,
 });
 

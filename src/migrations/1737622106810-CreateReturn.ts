@@ -7,7 +7,6 @@ import {
 
 export class CreateReturns1737637890123 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'returns' table
     await queryRunner.createTable(
       new Table({
         name: 'returns',
@@ -66,7 +65,6 @@ export class CreateReturns1737637890123 implements MigrationInterface {
       true,
     );
 
-    // Ensure 'events', 'users', and 'event_items' tables exist before adding foreign keys
     const tableExists = async (tableName: string): Promise<boolean> => {
       const result = await queryRunner.query(
         `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '${tableName}');`,
@@ -129,7 +127,6 @@ export class CreateReturns1737637890123 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign keys and 'returns' table
     const table = await queryRunner.getTable('returns');
     if (table) {
       const eventForeignKey = table.foreignKeys.find(

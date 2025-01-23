@@ -2,7 +2,6 @@ import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
 export class CreateEvent1737620237101 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'events' table
     await queryRunner.createTable(
       new Table({
         name: 'events',
@@ -57,7 +56,6 @@ export class CreateEvent1737620237101 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop 'events' table
     await queryRunner.dropTable('events');
   }
 }

@@ -31,7 +31,7 @@ import { ConfigModule } from '@nestjs/config';
         Return,
       ],
       synchronize: false,
-      migrations: ['dist/migrations/*.js'],
+      migrations: ['dist/src/migrations/*.js'],
       migrationsRun: true,
     }),
     TypeOrmModule.forFeature([
