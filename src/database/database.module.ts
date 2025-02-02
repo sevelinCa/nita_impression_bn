@@ -30,7 +30,7 @@ import { ConfigModule } from '@nestjs/config';
         EventItem,
         Return,
       ],
-      synchronize: false,
+      synchronize: process.env.DATABASE_SYNC === 'true',
       migrations: ['dist/src/migrations/*.js'],
     }),
     TypeOrmModule.forFeature([

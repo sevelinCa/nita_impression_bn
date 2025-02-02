@@ -18,6 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Controller('users')
 export class UsersController {
@@ -55,10 +56,10 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user information' })
+  @ApiOperation({ summary: 'Update admin information' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully updated the user information',
+    description: 'Successfully updated the admin information',
   })
   @ApiResponse({
     status: 400,
@@ -72,6 +73,30 @@ export class UsersController {
       userId: string;
     };
     return this.usersService.update(json.userId, updateUserDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update employee information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully updated the employee information',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  updateEmployee(
+    @Body() updateUserDto: UpdateEmployeeDto,
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.updateEmployee(json.userId, updateUserDto, id);
   }
 
   @ApiBearerAuth()

@@ -193,8 +193,9 @@ export class ReturnService {
 
         const report = await this.reportService.closedEventReport(event);
         await this.mailService.sendEventReport({
+          username: admin.fullName,
           name: report.name,
-          customerName: report.customerName,
+          customers: report.customers,
           customerEmail: report.customerEmail,
           eventId: report.eventId,
           eventDate: report.eventDate,

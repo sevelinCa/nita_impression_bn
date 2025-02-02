@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base.service';
@@ -12,6 +13,7 @@ import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Injectable()
 export class UsersService {
@@ -39,6 +41,36 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new NotFoundException('User Not Found');
+    const result = this.userRepository.save({ ...user, ...updateUserDto });
+    return result;
+  }
+
+  async updateEmployee(
+    id: string,
+    updateUserDto: UpdateEmployeeDto,
+    userId: string,
+  ) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new UnauthorizedException();
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenException(
+        'You are not allowed to update employee information',
+      );
+    }
+
+    const employee = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (employee === null) {
+      throw new NotFoundException('Employee Not Found');
+    }
+
+    if (employee.role !== 'worker') {
+      throw new BadRequestException('Must be employee not admin buddy!');
+    }
+
     const result = this.userRepository.save({ ...user, ...updateUserDto });
     return result;
   }

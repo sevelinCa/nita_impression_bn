@@ -2,8 +2,9 @@ import * as nodemailer from 'nodemailer';
 import { Injectable } from '@nestjs/common';
 
 interface EventReportEmailData {
+  username: string;
   name: string;
-  customerName: string;
+  customers: number;
   customerEmail: string;
   eventId: string;
   eventDate: Date;
@@ -431,7 +432,7 @@ export class MailService {
               <h1>Event Financial Report</h1>
             </div>
             <div class="content">
-              <p>Dear ${data.customerName},</p>
+              <p>Dear ${data.username},</p>
               <p>Please find below the detailed financial analysis for Event ID: ${data.eventId}</p>
               
               <h3>Event Overview</h3>
@@ -441,12 +442,16 @@ export class MailService {
                   <td>${data.eventId}</td>
                 </tr>
                 <tr>
+                  <th>Event Name</th>
+                  <td>${data.name}</td>
+                </tr>
+                <tr>
                   <th>Event Date</th>
                   <td>${new Date(data.eventDate).toLocaleDateString()}</td>
                 </tr>
                 <tr>
-                  <th>Employee Name</th>
-                  <td>${data.name}</td>
+                  <th>Employees</th>
+                  <td>${data.customers}</td>
                 </tr>
                 <tr>
                   <th>Revenue Generated</th>

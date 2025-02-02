@@ -101,10 +101,10 @@ export class ReportsService {
     }
 
     return {
-      name: event?.users[0] ? event.users[0].fullName : 'Unknown User',
+      name: event?.name,
       eventId: event.id,
       eventDate: event.date,
-      customerName: admin.fullName,
+      customers: event.users.length,
       customerEmail: admin.email,
       totalIncome: event.cost,
       totalExpense,

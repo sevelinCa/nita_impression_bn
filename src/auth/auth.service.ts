@@ -42,7 +42,7 @@ export class AuthService {
         fullName,
         email,
         password: hashedPassword,
-        age: age ? Number(age) : undefined,
+        age: age ? age : undefined,
       });
       const result = await this.userRepository.save(newUser);
       return {

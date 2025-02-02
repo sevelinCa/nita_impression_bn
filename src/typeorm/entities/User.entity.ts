@@ -32,8 +32,8 @@ export class User {
   @Column({ nullable: true })
   profile: string;
 
-  @Column('int', { nullable: true })
-  age: number;
+  @Column('date', { nullable: true })
+  age: Date;
 
   @Column({ nullable: true, length: 255 })
   address: string;

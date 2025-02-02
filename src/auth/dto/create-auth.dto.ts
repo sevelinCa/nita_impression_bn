@@ -1,8 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
+  IsDate,
   IsEmail,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   MinLength,
@@ -23,7 +24,8 @@ export class UserDto {
   })
   @IsString()
   @IsEmail()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiPropertyOptional({
     description: 'The password of the user',
@@ -46,12 +48,14 @@ export class UserDto {
 
   @ApiPropertyOptional({
     description: 'The age of the user',
-    example: 30,
-    required: false,
+    type: String,
+    format: 'date-time',
+    example: '2025-01-01T10:00:00Z',
   })
   @IsOptional()
-  @IsNumber()
-  age?: number;
+  @IsDate()
+  @Type(() => Date)
+  age?: Date;
 
   @ApiPropertyOptional({
     description: 'The address of the user',
