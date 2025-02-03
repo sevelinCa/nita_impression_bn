@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class ChangeAgeToDateInUsers implements MigrationInterface {
+export class ChangeAgeToDateInUsers1696251234567 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropColumn('users', 'age');
 
