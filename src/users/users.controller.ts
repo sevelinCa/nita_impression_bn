@@ -55,6 +55,29 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully changed the password',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request',
+  })
+  changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.changePassword(json.userId, changePasswordDto);
+  }
+
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update admin information' })
   @ApiResponse({
@@ -97,28 +120,5 @@ export class UsersController {
       userId: string;
     };
     return this.usersService.updateEmployee(json.userId, updateUserDto, id);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change user password' })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully changed the password',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request',
-  })
-  @UseGuards(JwtAuthGuard)
-  @Put('change-password')
-  changePassword(
-    @Body() changePasswordDto: ChangePasswordDto,
-    @Req() request: Request,
-  ) {
-    const token = request.headers.authorization.replace('Bearer ', '');
-    const json = this.jwtService.decode(token, { json: true }) as {
-      userId: string;
-    };
-    return this.usersService.changePassword(json.userId, changePasswordDto);
   }
 }
