@@ -8,7 +8,7 @@ export class AddingSizeFieldInEvent1738654844304 implements MigrationInterface {
         name: 'size',
         type: 'enum',
         enum: ['small', 'big'],
-        isNullable: false,
+        isNullable: true,
       }),
     );
   }
