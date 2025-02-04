@@ -23,6 +23,12 @@ export class Event {
 
   @Column({
     type: 'enum',
+    enum: ['small', 'big'],
+  })
+  size: string;
+
+  @Column({
+    type: 'enum',
     enum: ['planning', 'ongoing', 'done', 'closed', 'cancelled'],
     default: 'planning',
   })

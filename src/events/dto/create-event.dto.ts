@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsOptional,
   IsUUID,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -121,6 +122,16 @@ export class CreateEventDto {
   })
   @IsNumber()
   cost: number;
+
+  @ApiProperty({
+    description: 'The size of the event',
+    enum: ['small', 'big'],
+    example: 'small',
+  })
+  @IsEnum(['small', 'big'], {
+    message: 'Status must be one of: small and big',
+  })
+  size: 'big' | 'small';
 
   @ApiProperty({
     description: 'List of employees working at the event',

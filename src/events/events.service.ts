@@ -129,6 +129,7 @@ export class EventsService {
         date: createEventDto.date,
         address: createEventDto.address,
         status: 'planning',
+        size: createEventDto.size,
         cost: createEventDto.cost,
         employeeFee: 0,
         users: employees,

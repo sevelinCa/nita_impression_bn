@@ -16,10 +16,18 @@ export class ReportsService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const totalEventsInMonth = await this.entityManager.find(Event, {
-      where: { date: Between(startOfMonth, endOfMonth) },
-      relations: ['eventItems', 'eventItems.rentalMaterial'],
-    });
+    const totalEventsInMonth = await this.entityManager
+      .getRepository(Event)
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.eventItems', 'eventItems')
+      .leftJoinAndSelect('eventItems.rentalMaterial', 'rentalMaterial')
+      .where('event.createdAt BETWEEN :startOfMonth AND :endOfMonth', {
+        startOfMonth,
+        endOfMonth,
+      })
+      .andWhere('event.status != :status', { status: 'planning' })
+      .getMany();
+
     let totalEvents = 0;
     let totalIncome = 0;
     let totalExpense = 0;
@@ -51,6 +59,10 @@ export class ReportsService {
       totalIncome,
       totalExpense,
       totalEvents,
+      events: totalEventsInMonth.map((event) => ({
+        ...event,
+        size: event.size || 'N/A',
+      })),
     };
   }
 
@@ -92,6 +104,7 @@ export class ReportsService {
         name:
           eventItem.material?.name ||
           eventItem.rentalMaterial?.name ||
+          eventItem.names ||
           'Unknown Item',
         quantity: eventItem.quantity,
         cost: itemExpense,
