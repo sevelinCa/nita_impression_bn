@@ -1,19 +1,18 @@
-import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddingUserStatus1739903046942 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.addColumn(
-      'users',
-      new TableColumn({
-        name: 'status',
-        type: 'enum',
-        enum: ['active', 'inactive'],
-        default: 'active',
-      }),
+    await queryRunner.query(
+      `CREATE TYPE "public"."users_status_enum" AS ENUM('active', 'inactive')`,
+    );
+
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "status" "public"."users_status_enum" NOT NULL DEFAULT 'active'`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropColumn('users', 'status');
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "status"`);
+    await queryRunner.query(`DROP TYPE "public"."users_status_enum"`);
   }
 }
