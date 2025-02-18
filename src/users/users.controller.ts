@@ -98,6 +98,37 @@ export class UsersController {
     return this.usersService.update(json.userId, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/inactivate')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Inactivate a user ' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully inactivated',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'User is already inactive',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Only admin is allowed to inactivate a user',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or Admin not found',
+  })
+  inactivateUser(
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.inactivateUser(userId, json.userId);
+  }
+
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update employee information' })
   @ApiResponse({

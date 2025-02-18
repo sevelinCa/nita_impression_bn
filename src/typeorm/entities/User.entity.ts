@@ -38,6 +38,9 @@ export class User {
   @Column({ nullable: true, length: 255 })
   address: string;
 
+  @Column({ type: 'enum', enum: ['active', 'inactive'], default: 'active' })
+  status: string;
+
   @Column({ nullable: true })
   resetPasswordToken: string;
 

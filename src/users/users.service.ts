@@ -41,6 +41,35 @@ export class UsersService {
     return user;
   }
 
+  async inactivateUser(userId: string, adminId: string) {
+    const admin = await this.userRepository.findOne({ where: { id: adminId } });
+
+    if (!admin) throw new NotFoundException('Admin Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to inactivate a user',
+      );
+    }
+
+    const user = await this.userRepository.findOneBy({ id: userId });
+
+    if (!user) throw new NotFoundException('User Not Found');
+
+    if (user.role !== 'worker') {
+      throw new BadRequestException('Only worker is allowed to be inactivated');
+    }
+
+    if (user.status === 'inactive') {
+      throw new BadRequestException('User is already inactive');
+    }
+
+    user.status = 'inactive';
+    await this.userRepository.save(user);
+
+    return { message: `${user.fullName} has been inactivated successfully` };
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new NotFoundException('User Not Found');
