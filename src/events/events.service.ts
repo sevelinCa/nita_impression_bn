@@ -542,8 +542,10 @@ export class EventsService {
         'eventItems.rentalMaterial',
         'users',
       ],
+      order: {
+        createdAt: 'DESC',
+      },
     });
-
     return this.baseService.paginate(events, totalCount, paginationQuery);
   }
 

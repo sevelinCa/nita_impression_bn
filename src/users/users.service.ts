@@ -28,6 +28,9 @@ export class UsersService {
     const [users, totalCount] = await this.userRepository.findAndCount({
       take,
       skip,
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
     return this.baseService.paginate(users, totalCount, paginationQuery);

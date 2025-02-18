@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -17,11 +18,12 @@ import {
   ApiParam,
   ApiResponse,
 } from '@nestjs/swagger';
-import { CreateReturnDto } from './create-return.dto';
+import { CreateReturnDto } from './dto/create-return.dto';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
+import { UpdateReturnDto } from './dto/update-return.tdto';
 
 @Controller('returns')
 export class ReturnsController {
@@ -77,6 +79,25 @@ export class ReturnsController {
       userId: string;
     };
     return this.returnsService.createReturn(createReturnDto, decoded.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update return' })
+  @ApiBody({ type: UpdateReturnDto })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not a worker' })
+  @ApiResponse({ status: 404, description: 'Event or User not found' })
+  async updateReturn(
+    @Body() updateReturnDto: UpdateReturnDto,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const decoded = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.returnsService.updateReturn(updateReturnDto, decoded.userId);
   }
 
   @UseGuards(JwtAuthGuard)
