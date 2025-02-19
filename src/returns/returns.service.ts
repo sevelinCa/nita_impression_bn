@@ -196,6 +196,7 @@ export class ReturnService {
         await this.mailService.sendEventReport({
           username: admin.fullName,
           name: report.name,
+          eventType: report.eventType,
           customers: report.customers,
           customerEmail: report.customerEmail,
           eventId: report.eventId,
@@ -376,6 +377,7 @@ export class ReturnService {
         await this.mailService.sendEventReport({
           username: admin.fullName,
           name: report.name,
+          eventType: report.eventType,
           customers: report.customers,
           customerEmail: report.customerEmail,
           eventId: report.eventId,

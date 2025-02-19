@@ -91,6 +91,11 @@ export class ReportsService {
     const itemizedExpenses = [];
     for (const eventItem of event.eventItems) {
       let itemExpense = 0;
+
+      if (eventItem.material) {
+        continue;
+      }
+
       if (eventItem.price) {
         itemExpense += eventItem.price * eventItem.quantity;
       }
@@ -102,10 +107,7 @@ export class ReportsService {
 
       itemizedExpenses.push({
         name:
-          eventItem.material?.name ||
-          eventItem.rentalMaterial?.name ||
-          eventItem.names ||
-          'Unknown Item',
+          eventItem.rentalMaterial?.name || eventItem.names || 'Unknown Item',
         quantity: eventItem.quantity,
         cost: itemExpense,
       });
@@ -116,6 +118,7 @@ export class ReportsService {
     return {
       name: event?.name,
       eventId: event.id,
+      eventType: event.size,
       eventDate: event.date,
       customers: event.users.length,
       customerEmail: admin.email,

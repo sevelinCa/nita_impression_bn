@@ -5,6 +5,7 @@ import { generatePdfReport } from 'src/pdf/pdf.service';
 interface EventReportEmailData {
   username: string;
   name: string;
+  eventType: string;
   customers: number;
   customerEmail: string;
   eventId: string;
@@ -392,6 +393,10 @@ export class MailService {
                 <tr>
                   <th>Event Name</th>
                   <td>${data.name}</td>
+                </tr>
+                <tr>
+                  <th>Event Name</th>
+                  <td>${data.eventType}</td>
                 </tr>
                 <tr>
                   <th>Event Date</th>

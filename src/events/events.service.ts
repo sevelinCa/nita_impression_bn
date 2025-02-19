@@ -17,6 +17,7 @@ import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { BaseService } from 'src/base.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Return } from 'src/typeorm/entities/Return.entity';
 
 interface ConsolidatedItem {
   materialId?: string;
@@ -703,5 +704,43 @@ export class EventsService {
     );
 
     return this.baseService.paginate(events, totalCount, paginationQuery);
+  }
+
+  async delete(eventId: string, userId: string) {
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: userId },
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException();
+    }
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException('Only admins are allowed to delete events');
+    }
+
+    const event = await this.entityManager.findOne(Event, {
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const eventItems = await this.entityManager.find(EventItem, {
+      where: { event: { id: event.id } },
+    });
+
+    for (const eventItem of eventItems) {
+      await this.entityManager.delete(Return, {
+        eventItem: { id: eventItem.id },
+      });
+    }
+
+    for (const eventItem of eventItems) {
+      await this.entityManager.remove(eventItem);
+    }
+
+    await this.entityManager.remove(event);
   }
 }
