@@ -19,7 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node ./node_modules/typeorm/cli",
-    "typeorm:create-migration": "npm run typeorm -- migration:create ./src/migrations/$npm_config_name",
+    "typeorm:run-migrations-sequentially": "pnpm run typeorm migration:run -- -t AddingEventUserTable1740091669202 && pnpm run typeorm migration:run -- -t AddingRelationShipInEvent1740123799446 && pnpm run typeorm migration:run -- -t AddingRelationShipInUser1740123976134",
     "typeorm:run-migrations": "npm run typeorm migration:run -- -d ./typeOrm.config.ts",
     "typeorm:revert-migrations": "npm run typeorm migration:revert -- -d ./typeOrm.config.ts"
   },
