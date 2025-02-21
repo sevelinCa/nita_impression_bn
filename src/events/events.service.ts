@@ -566,7 +566,7 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
-        'users',
+        'eventUsers',
       ],
       order: {
         createdAt: 'DESC',
