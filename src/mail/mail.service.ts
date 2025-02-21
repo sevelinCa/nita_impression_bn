@@ -395,7 +395,7 @@ export class MailService {
                   <td>${data.name}</td>
                 </tr>
                 <tr>
-                  <th>Event Name</th>
+                  <th>Event Type</th>
                   <td>${data.eventType}</td>
                 </tr>
                 <tr>

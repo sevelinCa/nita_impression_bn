@@ -3,12 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  ManyToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './User.entity';
 import { EventItem } from './EventItem.entity';
+import { EventUser } from './EventUsers';
 
 @Entity('events')
 export class Event {
@@ -37,7 +36,7 @@ export class Event {
   @Column()
   cost: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   employeeFee: number;
 
   @Column()
@@ -49,8 +48,8 @@ export class Event {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToMany(() => User, (user) => user.events)
-  users: User[];
+  @OneToMany(() => EventUser, (eventUser) => eventUser.event)
+  eventUsers: EventUser[];
 
   @OneToMany(() => EventItem, (eventItem) => eventItem.event)
   eventItems: EventItem[];

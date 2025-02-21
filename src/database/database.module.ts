@@ -8,6 +8,7 @@ import { Event } from 'src/typeorm/entities/Event.entity';
 import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Return } from 'src/typeorm/entities/Return.entity';
 import { ConfigModule } from '@nestjs/config';
+import { EventUser } from 'src/typeorm/entities/EventUsers';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ConfigModule } from '@nestjs/config';
         Event,
         EventItem,
         Return,
+        EventUser,
       ],
       synchronize: process.env.DATABASE_SYNC === 'true',
       migrations: ['dist/src/migrations/*.js'],

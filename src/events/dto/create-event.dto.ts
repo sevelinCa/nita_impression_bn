@@ -86,6 +86,14 @@ class EmployeeDto {
   @IsString()
   @IsOptional()
   employeeFullNames?: string;
+
+  @ApiProperty({
+    description: 'Fee for the employee',
+    type: Number,
+    example: 100.5,
+  })
+  @IsNumber()
+  fee: number;
 }
 
 export class CreateEventDto {

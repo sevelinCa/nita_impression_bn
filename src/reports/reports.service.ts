@@ -76,7 +76,7 @@ export class ReportsService {
         'eventItems',
         'eventItems.rentalMaterial',
         'eventItems.material',
-        'users',
+        'eventUsers',
       ],
     });
     if (!event) {
@@ -120,7 +120,7 @@ export class ReportsService {
       eventId: event.id,
       eventType: event.size,
       eventDate: event.date,
-      customers: event.users.length,
+      customers: event.eventUsers.length,
       customerEmail: admin.email,
       totalIncome: event.cost,
       totalExpense,
@@ -210,7 +210,7 @@ export class ReportsService {
       .leftJoinAndSelect('event.eventItems', 'eventItems')
       .leftJoinAndSelect('eventItems.rentalMaterial', 'rentalMaterial')
       .leftJoinAndSelect('eventItems.material', 'material')
-      .leftJoinAndSelect('event.users', 'users')
+      .leftJoinAndSelect('event.eventUsers', 'users')
       .where('event.createdAt BETWEEN :startDate AND :endDate', {
         startDate: formattedStartDate,
         endDate: formattedEndDate,

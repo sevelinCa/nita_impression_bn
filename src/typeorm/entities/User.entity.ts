@@ -2,12 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToMany,
-  JoinTable,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Event } from './Event.entity';
+import { EventUser } from './EventUsers';
 
 @Entity('users')
 export class User {
@@ -53,11 +52,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToMany(() => Event, (event) => event.users)
-  @JoinTable({
-    name: 'events_users',
-    joinColumn: { name: 'userId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'eventId', referencedColumnName: 'id' },
-  })
-  events: Event[];
+  @OneToMany(() => EventUser, (eventUser) => eventUser.user)
+  eventUsers: EventUser[];
 }
