@@ -13,6 +13,7 @@ import { MailService } from './mail/mail.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReportsModule } from './reports/reports.module';
 import { ReportsService } from './reports/reports.service';
+import { AdminUserSeeder } from './seeders/AdminSeeder';
 
 @Module({
   imports: [
@@ -28,6 +29,6 @@ import { ReportsService } from './reports/reports.service';
     ReportsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, MailService, ReportsService],
+  providers: [AppService, MailService, ReportsService, AdminUserSeeder],
 })
 export class AppModule {}
