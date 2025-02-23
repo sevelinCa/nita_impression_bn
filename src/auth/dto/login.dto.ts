@@ -4,7 +4,7 @@ import { IsNotEmpty, IsString, IsEmail } from 'class-validator';
 export class AuthPayloadDto {
   @ApiProperty({
     description: 'The email address of the user',
-    example: 'user@example.com',
+    example: 'mresire@gmail.com',
   })
   @IsNotEmpty()
   @IsEmail()
@@ -12,7 +12,7 @@ export class AuthPayloadDto {
 
   @ApiProperty({
     description: 'The password of the user',
-    example: 'Password123!',
+    example: 'password123',
   })
   @IsNotEmpty()
   @IsString()

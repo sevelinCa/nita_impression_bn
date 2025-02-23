@@ -549,7 +549,7 @@ export class EventsService {
     return {
       ...event,
       eventUsers: event.eventUsers.map((eventUser) => ({
-        id: eventUser.id,
+        id: eventUser.user.id,
         fee: eventUser.fee,
         fullName: eventUser.user?.fullName || undefined,
       })),
