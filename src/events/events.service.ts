@@ -542,10 +542,18 @@ export class EventsService {
         'eventItems.material',
         'eventItems.rentalMaterial',
         'eventUsers',
+        'eventUsers.user',
       ],
     });
 
-    return event;
+    return {
+      ...event,
+      eventUsers: event.eventUsers.map((eventUser) => ({
+        id: eventUser.id,
+        fee: eventUser.fee,
+        fullName: eventUser.user?.fullName || undefined,
+      })),
+    };
   }
 
   async findAll(paginationQuery: PaginationQueryDto, id: string) {

@@ -111,8 +111,6 @@ export class EventsController {
       userId: string;
     };
 
-    console.log('----->eventId', eventId);
-
     return this.eventsService.delete(eventId, json.userId);
   }
 
