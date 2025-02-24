@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { User } from 'src/typeorm/entities/User.entity';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { UserDto } from './dto/create-auth.dto';
 import { AuthPayloadDto } from './dto/login.dto';
 import { MailService } from 'src/mail/mail.service';

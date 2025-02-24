@@ -12,7 +12,7 @@ import { User } from 'src/typeorm/entities/User.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Injectable()

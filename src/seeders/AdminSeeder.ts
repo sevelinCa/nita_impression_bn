@@ -1,7 +1,7 @@
 import { EntitySeeder } from 'src/interface/seeder';
 import { EntityManager } from 'typeorm';
 import { User } from 'src/typeorm/entities/User.entity';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export class AdminUserSeeder implements EntitySeeder {
   async run(db: EntityManager): Promise<void> {
