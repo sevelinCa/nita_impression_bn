@@ -7,6 +7,7 @@ import { Event } from './src/typeorm/entities/Event.entity';
 import { EventItem } from './src/typeorm/entities/EventItem.entity';
 import { Return } from './src/typeorm/entities/Return.entity';
 import 'dotenv/config';
+import { EventUser } from 'src/typeorm/entities/EventUsers';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -23,6 +24,7 @@ const dataSource = new DataSource({
     Event,
     EventItem,
     Return,
+    EventUser,
   ],
   migrations: ['dist/src/migrations/*.js'],
   synchronize: process.env.DATABASE_SYNC === 'false',
