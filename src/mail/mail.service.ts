@@ -26,7 +26,7 @@ export class MailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
-      // secure: true,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -290,6 +290,7 @@ export class MailService {
       console.error('Error sending report email:', error.message);
     }
   }
+
   async sendEventReport(data: EventReportEmailData): Promise<void> {
     const formatPrice = (price: number) => {
       return new Intl.NumberFormat().format(price);
@@ -438,7 +439,7 @@ export class MailService {
                     data.employeeFee
                       ? `<tr>
                           <td>Employee Fee</td>
-                          <td>1</td>
+                          <td>${data.customers}</td>
                           <td>${formatPrice(data.employeeFee)}</td>
                         </tr>`
                       : ''

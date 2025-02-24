@@ -97,7 +97,7 @@ export class ReportsService {
     for (const eventItem of event.eventItems) {
       let itemExpense = 0;
 
-      if (eventItem.material?.rentalPrice === null) {
+      if (eventItem.material && eventItem.type === null) {
         continue;
       }
 
@@ -105,13 +105,11 @@ export class ReportsService {
         const rentingCost: number = Number(
           eventItem.rentalMaterial.rentingCost,
         );
-
         itemExpense += rentingCost * eventItem.quantity;
       }
 
       if (eventItem.type) {
         const price: number = Number(eventItem.price);
-
         itemExpense += price * eventItem.quantity;
       }
 
