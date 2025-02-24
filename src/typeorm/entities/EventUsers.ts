@@ -13,11 +13,16 @@ export class EventUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Event, (event) => event.eventUsers)
+  @ManyToOne(() => Event, (event) => event.eventUsers, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'eventId' })
   event: Event;
 
-  @ManyToOne(() => User, (user) => user.eventUsers)
+  @ManyToOne(() => User, (user) => user.eventUsers, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'userId' })
   user: User;
 

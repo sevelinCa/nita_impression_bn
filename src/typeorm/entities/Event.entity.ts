@@ -48,9 +48,17 @@ export class Event {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => EventUser, (eventUser) => eventUser.event)
+  @OneToMany(() => EventUser, (eventUser) => eventUser.event, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   eventUsers: EventUser[];
 
-  @OneToMany(() => EventItem, (eventItem) => eventItem.event)
+  @OneToMany(() => EventItem, (eventItem) => eventItem.event, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   eventItems: EventItem[];
 }

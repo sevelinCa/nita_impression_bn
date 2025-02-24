@@ -111,7 +111,8 @@ export class EventsController {
       userId: string;
     };
 
-    return this.eventsService.delete(eventId, json.userId);
+    await this.eventsService.delete(eventId, json.userId);
+    return { message: 'Event deleted successfully' };
   }
 
   @Put(':id')

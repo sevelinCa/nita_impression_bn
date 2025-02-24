@@ -740,40 +740,65 @@ export class EventsService {
   }
 
   async delete(eventId: string, userId: string) {
-    const admin = await this.entityManager.findOne(User, {
-      where: { id: userId },
-    });
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const admin = await transactionalEntityManager.findOne(User, {
+          where: { id: userId },
+        });
 
-    if (!admin) {
-      throw new UnauthorizedException();
-    }
+        if (!admin) {
+          throw new UnauthorizedException();
+        }
 
-    if (admin.role !== 'admin') {
-      throw new ForbiddenException('Only admins are allowed to delete events');
-    }
+        if (admin.role !== 'admin') {
+          throw new ForbiddenException(
+            'Only admins are allowed to delete events',
+          );
+        }
 
-    const event = await this.entityManager.findOne(Event, {
-      where: { id: eventId },
-    });
+        const event = await transactionalEntityManager.findOne(Event, {
+          where: { id: eventId },
+          relations: ['eventUsers', 'eventItems'],
+        });
 
-    if (!event) {
-      throw new NotFoundException('Event not found');
-    }
+        if (!event) {
+          throw new NotFoundException('Event not found');
+        }
 
-    const eventItems = await this.entityManager.find(EventItem, {
-      where: { event: { id: event.id } },
-    });
+        if (event.eventUsers?.length > 0) {
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(EventUser)
+            .where('eventId = :eventId', { eventId })
+            .execute();
+        }
 
-    for (const eventItem of eventItems) {
-      await this.entityManager.delete(Return, {
-        eventItem: { id: eventItem.id },
-      });
-    }
+        if (event.eventItems?.length > 0) {
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(Return)
+            .where('eventItemId IN (:...eventItemIds)', {
+              eventItemIds: event.eventItems.map((item) => item.id),
+            })
+            .execute();
 
-    for (const eventItem of eventItems) {
-      await this.entityManager.remove(eventItem);
-    }
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(EventItem)
+            .where('eventId = :eventId', { eventId })
+            .execute();
+        }
 
-    await this.entityManager.remove(event);
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .delete()
+          .from(Event)
+          .where('id = :id', { id: eventId })
+          .execute();
+      },
+    );
   }
 }
