@@ -42,13 +42,18 @@ export class ReportsService {
       let totalEventExpense = event.employeeFee;
 
       for (const eventItem of event.eventItems) {
-        if (eventItem.price) {
-          totalEventExpense += eventItem.price * eventItem.quantity;
+        if (eventItem.rentalMaterial) {
+          const rentingCost: number = Number(
+            eventItem.rentalMaterial.rentingCost,
+          );
+
+          totalEventExpense += rentingCost * eventItem.quantity;
         }
 
-        if (eventItem.rentalMaterial) {
-          totalEventExpense +=
-            eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+        if (eventItem.type) {
+          const price: number = Number(eventItem.price);
+
+          totalEventExpense += price * eventItem.quantity;
         }
       }
 
@@ -92,17 +97,22 @@ export class ReportsService {
     for (const eventItem of event.eventItems) {
       let itemExpense = 0;
 
-      if (eventItem.material) {
+      if (eventItem.material?.rentalPrice === null) {
         continue;
       }
 
-      if (eventItem.price) {
-        itemExpense += eventItem.price * eventItem.quantity;
+      if (eventItem.rentalMaterial) {
+        const rentingCost: number = Number(
+          eventItem.rentalMaterial.rentingCost,
+        );
+
+        itemExpense += rentingCost * eventItem.quantity;
       }
 
-      if (eventItem.rentalMaterial) {
-        itemExpense +=
-          eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+      if (eventItem.type) {
+        const price: number = Number(eventItem.price);
+
+        itemExpense += price * eventItem.quantity;
       }
 
       itemizedExpenses.push({
@@ -154,24 +164,29 @@ export class ReportsService {
       });
 
       let totalIncome = 0;
-      let totalExpense = 0;
+      let totalExpense: number = 0;
 
       for (const event of totalEventsInMonth) {
-        if (event.status === 'cancelled') {
+        if (event.status === 'cancelled' || event.status === 'planning') {
           continue;
         }
         totalIncome += event.cost;
 
-        let totalEventExpense = event.employeeFee || 0;
+        let totalEventExpense: number = event.employeeFee || 0;
 
         for (const eventItem of event.eventItems) {
-          if (eventItem.price) {
-            totalEventExpense += eventItem.price * eventItem.quantity;
+          if (eventItem.rentalMaterial) {
+            const rentingCost: number = Number(
+              eventItem.rentalMaterial.rentingCost,
+            );
+
+            totalEventExpense += rentingCost * eventItem.quantity;
           }
 
-          if (eventItem.rentalMaterial) {
-            totalEventExpense +=
-              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+          if (eventItem.type) {
+            const price: number = Number(eventItem.price);
+
+            totalEventExpense += price * eventItem.quantity;
           }
         }
 
@@ -184,8 +199,8 @@ export class ReportsService {
 
       monthlyReports.push({
         [monthName.toLowerCase()]: {
-          income: totalIncome,
-          expense: totalExpense,
+          income: Number(totalIncome),
+          expense: Number(totalExpense),
         },
       });
     }
@@ -222,17 +237,25 @@ export class ReportsService {
     }
 
     const eventReports = events
-      .filter((event) => event.status !== 'cancelled')
+      .filter(
+        (event) => event.status !== 'cancelled' && event.status !== 'planning',
+      )
       .map((event) => {
         let totalExpense = event.employeeFee || 0;
 
         for (const eventItem of event.eventItems) {
-          if (eventItem.price) {
-            totalExpense += eventItem.price * eventItem.quantity;
-          }
           if (eventItem.rentalMaterial) {
-            totalExpense +=
-              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+            const rentingCost: number = Number(
+              eventItem.rentalMaterial.rentingCost,
+            );
+
+            totalExpense += rentingCost * eventItem.quantity;
+          }
+
+          if (eventItem.type) {
+            const price: number = Number(eventItem.price);
+
+            totalExpense += price * eventItem.quantity;
           }
         }
 

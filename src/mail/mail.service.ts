@@ -26,7 +26,7 @@ export class MailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
-      secure: true,
+      // secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -285,6 +285,7 @@ export class MailService {
       };
 
       await this.transporter.sendMail(mailOptions);
+      console.log('----->emailSent');
     } catch (error) {
       console.error('Error sending report email:', error.message);
     }

@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
 export class AdminUserSeeder implements EntitySeeder {
   async run(db: EntityManager): Promise<void> {
     const adminData = {
-      email: 'mresire@gmail.com',
+      email: process.env.ADMIN_MAIL,
       password: 'password123',
       role: 'admin',
       fullName: 'Admin User',

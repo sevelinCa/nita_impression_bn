@@ -36,7 +36,7 @@ export class Event {
   @Column()
   cost: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column()
   employeeFee: number;
 
   @Column()
