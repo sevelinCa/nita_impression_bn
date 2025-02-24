@@ -9,7 +9,7 @@ import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { DateRangeDto } from './event-range.dto';
+import { DateRangeDto } from './dto/event-range.dto';
 
 @ApiTags('Reports')
 @Controller('reports')

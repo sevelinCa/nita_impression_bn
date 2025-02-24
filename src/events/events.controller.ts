@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Put,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,9 +30,9 @@ import { ChangeStatusDto } from './dto/change-status.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @ApiTags('Events')
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('events')
-@UseGuards(JwtAuthGuard)
 export class EventsController {
   constructor(
     private readonly eventsService: EventsService,
@@ -68,10 +69,8 @@ export class EventsController {
     return this.eventsService.create(createEventDto, json.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('eventItems')
   @ApiOperation({ summary: 'Get all events items' })
-  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all events items.',
@@ -101,7 +100,21 @@ export class EventsController {
     return this.eventsService.eventDetails(eventId, json.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Delete(':eventId')
+  @ApiOperation({ summary: 'Delete event by ID' })
+  async delete(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+
+    await this.eventsService.delete(eventId, json.userId);
+    return { message: 'Event deleted successfully' };
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update an event' })
   @ApiParam({
@@ -120,7 +133,6 @@ export class EventsController {
     return this.eventsService.update(eventId, updateEVentDto, json.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: 'Update an event status' })
   @ApiParam({
@@ -143,10 +155,8 @@ export class EventsController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: 'Get all events' })
-  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all events.',
@@ -167,10 +177,8 @@ export class EventsController {
     return this.eventsService.findAll(paginationQuery, json.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':employeeId')
   @ApiOperation({ summary: 'Get all events by a employee' })
-  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all events by employee.',

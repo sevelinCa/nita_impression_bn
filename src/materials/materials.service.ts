@@ -81,6 +81,10 @@ export class MaterialsService {
     const [materials, totalCount] = await this.materialRepository.findAndCount({
       take,
       skip,
+      relations: ['category'],
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
     return this.baseService.paginate(materials, totalCount, paginationQuery);

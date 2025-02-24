@@ -18,6 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Controller('users')
 export class UsersController {
@@ -54,11 +55,34 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put('change-password')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user information' })
+  @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully updated the user information',
+    description: 'Successfully changed the password',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request',
+  })
+  changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.changePassword(json.userId, changePasswordDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update admin information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully updated the admin information',
   })
   @ApiResponse({
     status: 400,
@@ -74,26 +98,58 @@ export class UsersController {
     return this.usersService.update(json.userId, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/inactivate')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change user password' })
+  @ApiOperation({ summary: 'Inactivate a user ' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully changed the password',
+    description: 'User successfully inactivated',
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request',
+    description: 'User is already inactive',
   })
-  @UseGuards(JwtAuthGuard)
-  @Put('change-password')
-  changePassword(
-    @Body() changePasswordDto: ChangePasswordDto,
+  @ApiResponse({
+    status: 403,
+    description: 'Only admin is allowed to inactivate a user',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or Admin not found',
+  })
+  inactivateUser(
+    @Param('id', ParseUUIDPipe) userId: string,
     @Req() request: Request,
   ) {
     const token = request.headers.authorization.replace('Bearer ', '');
     const json = this.jwtService.decode(token, { json: true }) as {
       userId: string;
     };
-    return this.usersService.changePassword(json.userId, changePasswordDto);
+    return this.usersService.inactivateUser(userId, json.userId);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update employee information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully updated the employee information',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  updateEmployee(
+    @Body() updateUserDto: UpdateEmployeeDto,
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.updateEmployee(json.userId, updateUserDto, id);
   }
 }

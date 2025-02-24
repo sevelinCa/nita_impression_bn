@@ -5,11 +5,11 @@ import {
   ValidateNested,
   IsOptional,
   IsUUID,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-// DTO for adding items (material, rental, or custom items)
 export class AddEventItemDto {
   @ApiPropertyOptional({
     description: 'ID of the material to add',
@@ -67,7 +67,6 @@ export class AddEventItemDto {
   type?: 'returnable' | 'non-returnable';
 }
 
-// DTO for adding employees
 export class AddEmployeeDto {
   @ApiPropertyOptional({
     description: 'ID of the employee to add',
@@ -86,18 +85,62 @@ export class AddEmployeeDto {
   @IsString()
   @IsOptional()
   employeeFullNames?: string;
+
+  @ApiProperty({
+    description: 'Fee for the employee',
+    type: Number,
+    example: 100.5,
+  })
+  @IsOptional()
+  @IsNumber()
+  fee: number;
 }
 
-// Main update DTO
 export class UpdateEventDto {
   @ApiPropertyOptional({
-    description: 'Employee fee for the event',
+    description: 'Name of the event',
+    type: String,
+    example: 'Wedding Party',
+  })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date of the event',
+    type: String,
+    format: 'date-time',
+    example: '2025-01-01T10:00:00Z',
+  })
+  @IsOptional()
+  date?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Address of the event',
+    type: String,
+    example: '123 Main Street, Kigali',
+  })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total cost of the event',
     type: Number,
-    example: 200,
+    example: 5000.75,
   })
   @IsNumber()
   @IsOptional()
-  employeeFee?: number;
+  cost?: number;
+
+  @ApiPropertyOptional({
+    description: 'The size of the event',
+    enum: ['small', 'big'],
+    example: 'small',
+  })
+  @IsEnum(['small', 'big'])
+  @IsOptional()
+  size?: 'small' | 'big';
 
   @ApiPropertyOptional({
     description: 'New employees to add to the event',

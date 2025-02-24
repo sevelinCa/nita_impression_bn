@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
+import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -17,6 +17,8 @@ import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { BaseService } from 'src/base.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Return } from 'src/typeorm/entities/Return.entity';
+import { EventUser } from 'src/typeorm/entities/EventUsers';
 
 interface ConsolidatedItem {
   materialId?: string;
@@ -75,13 +77,13 @@ export class EventsService {
     try {
       const entityManager = queryRunner.manager;
 
-      const user = await this.entityManager.findOne(User, {
+      const user = await entityManager.findOne(User, {
         where: { id: userId },
       });
       if (!user) throw new NotFoundException('User Not Found');
 
       if (user.role !== 'admin')
-        throw new ForbiddenException('Only admin is allowed to view materials');
+        throw new ForbiddenException('Only admin is allowed to create events');
 
       const employees = await Promise.all(
         createEventDto.employees.map(async (emp) => {
@@ -94,7 +96,7 @@ export class EventsService {
           let employee: User;
 
           if (emp.employeeId) {
-            employee = await this.entityManager.findOne(User, {
+            employee = await entityManager.findOne(User, {
               where: { id: emp.employeeId },
             });
 
@@ -110,31 +112,44 @@ export class EventsService {
               );
             }
           } else if (emp.employeeFullNames) {
-            employee = this.entityManager.create(User, {
+            employee = entityManager.create(User, {
               fullName: emp.employeeFullNames,
               role: 'worker',
             });
-            await this.entityManager.save(User, employee);
+            await entityManager.save(User, employee);
           } else {
             throw new BadRequestException(
               `You must provide either employeeId or employeeFullNames.`,
             );
           }
 
-          return employee;
+          return { employee, fee: emp.fee };
         }),
       );
-      const event = this.entityManager.create(Event, {
+
+      const totalEmployeeFee = employees.reduce((sum, emp) => sum + emp.fee, 0);
+
+      const event = entityManager.create(Event, {
         name: createEventDto.name,
         date: createEventDto.date,
         address: createEventDto.address,
         status: 'planning',
+        size: createEventDto.size,
         cost: createEventDto.cost,
-        employeeFee: 0,
-        users: employees,
+        employeeFee: totalEmployeeFee,
       });
 
-      await this.entityManager.save(Event, event);
+      await entityManager.save(Event, event);
+
+      const eventUsers = employees.map(({ employee, fee }) => {
+        return entityManager.create(EventUser, {
+          event,
+          user: employee,
+          fee,
+        });
+      });
+
+      await entityManager.save(EventUser, eventUsers);
 
       const eventItems: EventItem[] = [];
 
@@ -224,6 +239,7 @@ export class EventsService {
       await entityManager.save(Event, event);
 
       await queryRunner.commitTransaction();
+
       return {
         event: {
           id: event.id,
@@ -285,7 +301,7 @@ export class EventsService {
     try {
       const entityManager = queryRunner.manager;
 
-      const user = await this.entityManager.findOne(User, {
+      const user = await entityManager.findOne(User, {
         where: { id: userId },
       });
       if (!user) throw new NotFoundException('User Not Found');
@@ -296,75 +312,86 @@ export class EventsService {
 
       const event = await entityManager.findOne(Event, {
         where: { id: eventId },
+        relations: ['eventUsers', 'eventUsers.user', 'eventItems'],
       });
       if (!event) {
         throw new NotFoundException(`Event with ID ${eventId} not found`);
       }
-      if (updateEventDto.employeeFee) {
-        event.employeeFee = updateEventDto.employeeFee;
-      }
+
+      if (updateEventDto.name !== undefined) event.name = updateEventDto.name;
+      if (updateEventDto.date !== undefined) event.date = updateEventDto.date;
+      if (updateEventDto.address !== undefined)
+        event.address = updateEventDto.address;
+      if (updateEventDto.cost !== undefined) event.cost = updateEventDto.cost;
+      if (updateEventDto.size !== undefined) event.size = updateEventDto.size;
 
       if (updateEventDto.addEmployees) {
-        const eventWithUsers = await this.entityManager.findOne(Event, {
-          where: { id: event.id },
-          relations: ['users'],
-        });
+        for (const emp of updateEventDto.addEmployees) {
+          if (emp.employeeId && emp.employeeFullNames) {
+            throw new BadRequestException(
+              'Provide either employeeId or employeeFullNames, not both',
+            );
+          }
 
-        if (!eventWithUsers) {
-          throw new NotFoundException(`Event with ID ${event.id} not found`);
+          let employee: User;
+
+          if (emp.employeeId) {
+            employee = await entityManager.findOne(User, {
+              where: { id: emp.employeeId },
+            });
+
+            if (!employee) {
+              throw new NotFoundException(
+                `Employee with ID ${emp.employeeId} not found`,
+              );
+            }
+
+            if (employee.role !== 'worker') {
+              throw new BadRequestException(`Employee role must be 'worker'`);
+            }
+
+            const existingEventUser = event.eventUsers.find(
+              (eu) => eu.user.id === emp.employeeId,
+            );
+
+            if (existingEventUser) {
+              existingEventUser.fee = emp.fee;
+              await entityManager.save(EventUser, existingEventUser);
+            } else {
+              const newEventUser = entityManager.create(EventUser, {
+                event,
+                user: employee,
+                fee: emp.fee,
+              });
+              await entityManager.save(EventUser, newEventUser);
+              event.eventUsers.push(newEventUser);
+            }
+          } else if (emp.employeeFullNames) {
+            employee = entityManager.create(User, {
+              fullName: emp.employeeFullNames,
+              role: 'worker',
+            });
+            await entityManager.save(User, employee);
+
+            const newEventUser = entityManager.create(EventUser, {
+              event,
+              user: employee,
+              fee: emp.fee,
+            });
+            await entityManager.save(EventUser, newEventUser);
+            event.eventUsers.push(newEventUser);
+          } else {
+            throw new BadRequestException(
+              'Provide either employeeId or employeeFullNames',
+            );
+          }
         }
 
-        eventWithUsers.users = eventWithUsers.users || [];
-
-        const newEmployees = await Promise.all(
-          updateEventDto.addEmployees.map(async (emp) => {
-            if (emp.employeeId && emp.employeeFullNames) {
-              throw new BadRequestException(
-                'Provide either employeeId or employeeFullNames, not both',
-              );
-            }
-
-            let employee: User;
-
-            if (emp.employeeId) {
-              employee = await this.entityManager.findOne(User, {
-                where: { id: emp.employeeId },
-              });
-
-              if (!employee) {
-                throw new NotFoundException(
-                  `Employee with ID ${emp.employeeId} not found`,
-                );
-              }
-
-              if (employee.role !== 'worker') {
-                throw new BadRequestException(`Employee role must be 'worker'`);
-              }
-
-              if (
-                eventWithUsers.users.some((user) => user.id === emp.employeeId)
-              ) {
-                throw new BadRequestException(
-                  `Employee with ID ${emp.employeeId} is already assigned to this event`,
-                );
-              }
-            } else if (emp.employeeFullNames) {
-              employee = this.entityManager.create(User, {
-                fullName: emp.employeeFullNames,
-                role: 'worker',
-              });
-              await this.entityManager.save(User, employee);
-            } else {
-              throw new BadRequestException(
-                'Provide either employeeId or employeeFullNames',
-              );
-            }
-
-            return employee;
-          }),
+        const totalEmployeeFee = event.eventUsers.reduce(
+          (sum, eu) => sum + eu.fee,
+          0,
         );
-        eventWithUsers.users.push(...newEmployees);
-        await this.entityManager.save(Event, eventWithUsers);
+        event.employeeFee = totalEmployeeFee;
       }
 
       if (updateEventDto.addItems) {
@@ -372,6 +399,7 @@ export class EventsService {
         const consolidatedItems = this.consolidateItems(
           updateEventDto.addItems,
         );
+        console.log('------>sonso', consolidatedItems);
 
         for (const item of consolidatedItems) {
           if (item.materialId && item.rentalMaterialId) {
@@ -477,11 +505,15 @@ export class EventsService {
             rentalMaterial.quantity -= item.quantity;
             await entityManager.save(RentalMaterial, rentalMaterial);
 
-            eventItem.rentalMaterial = rentalMaterial;
+            const rental = (eventItem.rentalMaterial = rentalMaterial);
+            console.log('------>rental', rental);
           }
 
           newItems.push(eventItem);
+          console.log('------>eventItem', newItems);
         }
+
+        console.log('------->new', newItems);
 
         await entityManager.save(EventItem, newItems);
       }
@@ -514,11 +546,19 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
-        'users',
+        'eventUsers',
+        'eventUsers.user',
       ],
     });
 
-    return event;
+    return {
+      ...event,
+      eventUsers: event.eventUsers.map((eventUser) => ({
+        id: eventUser.user.id,
+        fee: eventUser.fee,
+        fullName: eventUser.user?.fullName || undefined,
+      })),
+    };
   }
 
   async findAll(paginationQuery: PaginationQueryDto, id: string) {
@@ -539,10 +579,12 @@ export class EventsService {
         'eventItems',
         'eventItems.material',
         'eventItems.rentalMaterial',
-        'users',
+        'eventUsers',
       ],
+      order: {
+        createdAt: 'DESC',
+      },
     });
-
     return this.baseService.paginate(events, totalCount, paginationQuery);
   }
 
@@ -579,7 +621,7 @@ export class EventsService {
       this.baseService.initializePagination(paginationQuery);
 
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
-      where: { users: { id: employee.id } },
+      where: { eventUsers: { id: employee.id } },
       take,
       skip,
       relations: [
@@ -690,17 +732,6 @@ export class EventsService {
     const { skip, take } =
       this.baseService.initializePagination(paginationQuery);
 
-    // const [events, totalCount] = await this.entityManager.findAndCount(Event, {
-    //   where: { user: { id: employee.id } },
-    //   take,
-    //   skip,
-    //   relations: [
-    //     'eventItems',
-    //     'eventItems.material',
-    //     'eventItems.rentalMaterial',
-    //   ],
-    // });
-
     const [events, totalCount] = await this.entityManager.findAndCount(
       EventItem,
       {
@@ -711,5 +742,68 @@ export class EventsService {
     );
 
     return this.baseService.paginate(events, totalCount, paginationQuery);
+  }
+
+  async delete(eventId: string, userId: string) {
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const admin = await transactionalEntityManager.findOne(User, {
+          where: { id: userId },
+        });
+
+        if (!admin) {
+          throw new UnauthorizedException();
+        }
+
+        if (admin.role !== 'admin') {
+          throw new ForbiddenException(
+            'Only admins are allowed to delete events',
+          );
+        }
+
+        const event = await transactionalEntityManager.findOne(Event, {
+          where: { id: eventId },
+          relations: ['eventUsers', 'eventItems'],
+        });
+
+        if (!event) {
+          throw new NotFoundException('Event not found');
+        }
+
+        if (event.eventUsers?.length > 0) {
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(EventUser)
+            .where('eventId = :eventId', { eventId })
+            .execute();
+        }
+
+        if (event.eventItems?.length > 0) {
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(Return)
+            .where('eventItemId IN (:...eventItemIds)', {
+              eventItemIds: event.eventItems.map((item) => item.id),
+            })
+            .execute();
+
+          await transactionalEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(EventItem)
+            .where('eventId = :eventId', { eventId })
+            .execute();
+        }
+
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .delete()
+          .from(Event)
+          .where('id = :id', { id: eventId })
+          .execute();
+      },
+    );
   }
 }

@@ -16,10 +16,18 @@ export class ReportsService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const totalEventsInMonth = await this.entityManager.find(Event, {
-      where: { date: Between(startOfMonth, endOfMonth) },
-      relations: ['eventItems', 'eventItems.rentalMaterial'],
-    });
+    const totalEventsInMonth = await this.entityManager
+      .getRepository(Event)
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.eventItems', 'eventItems')
+      .leftJoinAndSelect('eventItems.rentalMaterial', 'rentalMaterial')
+      .where('event.createdAt BETWEEN :startOfMonth AND :endOfMonth', {
+        startOfMonth,
+        endOfMonth,
+      })
+      .andWhere('event.status != :status', { status: 'planning' })
+      .getMany();
+
     let totalEvents = 0;
     let totalIncome = 0;
     let totalExpense = 0;
@@ -34,13 +42,18 @@ export class ReportsService {
       let totalEventExpense = event.employeeFee;
 
       for (const eventItem of event.eventItems) {
-        if (eventItem.price) {
-          totalEventExpense += eventItem.price * eventItem.quantity;
+        if (eventItem.rentalMaterial) {
+          const rentingCost: number = Number(
+            eventItem.rentalMaterial.rentingCost,
+          );
+
+          totalEventExpense += rentingCost * eventItem.quantity;
         }
 
-        if (eventItem.rentalMaterial) {
-          totalEventExpense +=
-            eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+        if (eventItem.type) {
+          const price: number = Number(eventItem.price);
+
+          totalEventExpense += price * eventItem.quantity;
         }
       }
 
@@ -51,6 +64,10 @@ export class ReportsService {
       totalIncome,
       totalExpense,
       totalEvents,
+      events: totalEventsInMonth.map((event) => ({
+        ...event,
+        size: event.size || 'N/A',
+      })),
     };
   }
 
@@ -64,7 +81,7 @@ export class ReportsService {
         'eventItems',
         'eventItems.rentalMaterial',
         'eventItems.material',
-        'users',
+        'eventUsers',
       ],
     });
     if (!event) {
@@ -79,20 +96,26 @@ export class ReportsService {
     const itemizedExpenses = [];
     for (const eventItem of event.eventItems) {
       let itemExpense = 0;
-      if (eventItem.price) {
-        itemExpense += eventItem.price * eventItem.quantity;
+
+      if (eventItem.material && eventItem.type === null) {
+        continue;
       }
 
       if (eventItem.rentalMaterial) {
-        itemExpense +=
-          eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+        const rentingCost: number = Number(
+          eventItem.rentalMaterial.rentingCost,
+        );
+        itemExpense += rentingCost * eventItem.quantity;
+      }
+
+      if (eventItem.type) {
+        const price: number = Number(eventItem.price);
+        itemExpense += price * eventItem.quantity;
       }
 
       itemizedExpenses.push({
         name:
-          eventItem.material?.name ||
-          eventItem.rentalMaterial?.name ||
-          'Unknown Item',
+          eventItem.rentalMaterial?.name || eventItem.names || 'Unknown Item',
         quantity: eventItem.quantity,
         cost: itemExpense,
       });
@@ -101,10 +124,11 @@ export class ReportsService {
     }
 
     return {
-      name: event?.users[0] ? event.users[0].fullName : 'Unknown User',
+      name: event?.name,
       eventId: event.id,
+      eventType: event.size,
       eventDate: event.date,
-      customerName: admin.fullName,
+      customers: event.eventUsers.length,
       customerEmail: admin.email,
       totalIncome: event.cost,
       totalExpense,
@@ -138,24 +162,29 @@ export class ReportsService {
       });
 
       let totalIncome = 0;
-      let totalExpense = 0;
+      let totalExpense: number = 0;
 
       for (const event of totalEventsInMonth) {
-        if (event.status === 'cancelled') {
+        if (event.status === 'cancelled' || event.status === 'planning') {
           continue;
         }
         totalIncome += event.cost;
 
-        let totalEventExpense = event.employeeFee || 0;
+        let totalEventExpense: number = event.employeeFee || 0;
 
         for (const eventItem of event.eventItems) {
-          if (eventItem.price) {
-            totalEventExpense += eventItem.price * eventItem.quantity;
+          if (eventItem.rentalMaterial) {
+            const rentingCost: number = Number(
+              eventItem.rentalMaterial.rentingCost,
+            );
+
+            totalEventExpense += rentingCost * eventItem.quantity;
           }
 
-          if (eventItem.rentalMaterial) {
-            totalEventExpense +=
-              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+          if (eventItem.type) {
+            const price: number = Number(eventItem.price);
+
+            totalEventExpense += price * eventItem.quantity;
           }
         }
 
@@ -168,8 +197,8 @@ export class ReportsService {
 
       monthlyReports.push({
         [monthName.toLowerCase()]: {
-          income: totalIncome,
-          expense: totalExpense,
+          income: Number(totalIncome),
+          expense: Number(totalExpense),
         },
       });
     }
@@ -194,7 +223,7 @@ export class ReportsService {
       .leftJoinAndSelect('event.eventItems', 'eventItems')
       .leftJoinAndSelect('eventItems.rentalMaterial', 'rentalMaterial')
       .leftJoinAndSelect('eventItems.material', 'material')
-      .leftJoinAndSelect('event.users', 'users')
+      .leftJoinAndSelect('event.eventUsers', 'users')
       .where('event.createdAt BETWEEN :startDate AND :endDate', {
         startDate: formattedStartDate,
         endDate: formattedEndDate,
@@ -206,17 +235,25 @@ export class ReportsService {
     }
 
     const eventReports = events
-      .filter((event) => event.status !== 'cancelled')
+      .filter(
+        (event) => event.status !== 'cancelled' && event.status !== 'planning',
+      )
       .map((event) => {
         let totalExpense = event.employeeFee || 0;
 
         for (const eventItem of event.eventItems) {
-          if (eventItem.price) {
-            totalExpense += eventItem.price * eventItem.quantity;
-          }
           if (eventItem.rentalMaterial) {
-            totalExpense +=
-              eventItem.rentalMaterial.rentingCost * eventItem.quantity;
+            const rentingCost: number = Number(
+              eventItem.rentalMaterial.rentingCost,
+            );
+
+            totalExpense += rentingCost * eventItem.quantity;
+          }
+
+          if (eventItem.type) {
+            const price: number = Number(eventItem.price);
+
+            totalExpense += price * eventItem.quantity;
           }
         }
 

@@ -7,7 +7,7 @@ import { Event } from 'src/typeorm/entities/Event.entity';
 import { User } from 'src/typeorm/entities/User.entity';
 import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
+import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { JwtService } from '@nestjs/jwt';
 import { BaseService } from 'src/base.service';
 import { MailService } from 'src/mail/mail.service';

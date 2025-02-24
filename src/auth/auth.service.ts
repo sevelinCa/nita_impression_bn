@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { User } from 'src/typeorm/entities/User.entity';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UserDto } from './dto/create-auth.dto';
 import { AuthPayloadDto } from './dto/login.dto';
 import { MailService } from 'src/mail/mail.service';
@@ -42,7 +42,7 @@ export class AuthService {
         fullName,
         email,
         password: hashedPassword,
-        age: age ? Number(age) : undefined,
+        age: age ? age : undefined,
       });
       const result = await this.userRepository.save(newUser);
       return {

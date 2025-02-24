@@ -9,7 +9,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Nita-Impressions API')
-    .setDescription('The nita-impressions API description')
+    .setDescription('The nita-impressions APIs')
     .addTag('Nita-Impressions')
     .addBearerAuth({
       type: 'http',

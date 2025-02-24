@@ -2,12 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToMany,
-  JoinTable,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Event } from './Event.entity';
+import { EventUser } from './EventUsers';
 
 @Entity('users')
 export class User {
@@ -32,11 +31,14 @@ export class User {
   @Column({ nullable: true })
   profile: string;
 
-  @Column('int', { nullable: true })
-  age: number;
+  @Column('date', { nullable: true })
+  age: Date;
 
   @Column({ nullable: true, length: 255 })
   address: string;
+
+  @Column({ type: 'enum', enum: ['active', 'inactive'], default: 'active' })
+  status: string;
 
   @Column({ nullable: true })
   resetPasswordToken: string;
@@ -50,7 +52,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToMany(() => Event, (event) => event.users)
-  @JoinTable()
-  events: Event[];
+  @OneToMany(() => EventUser, (eventUser) => eventUser.user)
+  eventUsers: EventUser[];
 }

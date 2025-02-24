@@ -6,10 +6,9 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Event } from './Event.entity';
-import { User } from './User.entity';
 import { Material } from './Material.entity';
 import { RentalMaterial } from './RentalMaterial.entity';
-import { EventItem } from './EventItem';
+import { EventItem } from './EventItem.entity';
 
 @Entity('returns')
 export class Return {
@@ -18,10 +17,6 @@ export class Return {
 
   @ManyToOne(() => Event, (event) => event.id)
   event: Event;
-
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: 'userId' })
-  user: User;
 
   @ManyToOne(() => EventItem, (eventItem) => eventItem.id)
   @JoinColumn({ name: 'eventItemId' })

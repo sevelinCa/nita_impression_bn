@@ -4,8 +4,8 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -18,11 +18,12 @@ import {
   ApiParam,
   ApiResponse,
 } from '@nestjs/swagger';
-import { CreateReturnDto } from './create-return.dto';
+import { CreateReturnDto } from './dto/create-return.dto';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
+import { UpdateReturnDto } from './dto/update-return.tdto';
 
 @Controller('returns')
 export class ReturnsController {
@@ -80,24 +81,23 @@ export class ReturnsController {
     return this.returnsService.createReturn(createReturnDto, decoded.userId);
   }
 
-  @Get(':userId')
-  @ApiOperation({ summary: 'Get all returns for the worker' })
+  @UseGuards(JwtAuthGuard)
+  @Put()
   @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'List of returns retrieved successfully',
-  })
+  @ApiOperation({ summary: 'Update return' })
+  @ApiBody({ type: UpdateReturnDto })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden - User is not a worker' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getReturns(
+  @ApiResponse({ status: 404, description: 'Event or User not found' })
+  async updateReturn(
+    @Body() updateReturnDto: UpdateReturnDto,
     @Req() request: Request,
-    @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     const token = request.headers.authorization.replace('Bearer ', '');
     const decoded = this.jwtService.decode(token, { json: true }) as {
       userId: string;
     };
-    return this.returnsService.getReturns(userId, decoded.userId);
+    return this.returnsService.updateReturn(updateReturnDto, decoded.userId);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -95,6 +95,10 @@ export class RentalMaterialsService {
       await this.rentalMaterialRepository.findAndCount({
         take,
         skip,
+        relations: ['category'],
+        order: {
+          createdAt: 'DESC',
+        },
       });
 
     return this.baseService.paginate(materials, totalCount, paginationQuery);

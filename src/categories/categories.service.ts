@@ -59,7 +59,11 @@ export class CategoriesService {
   }
 
   async findAll() {
-    const categories = await this.categoryRepository.find();
+    const categories = await this.categoryRepository.find({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
     return categories;
   }
 }

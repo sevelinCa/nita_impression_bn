@@ -5,9 +5,10 @@ import { Material } from 'src/typeorm/entities/Material.entity';
 import { RentalMaterial } from 'src/typeorm/entities/RentalMaterial.entity';
 import { Category } from 'src/typeorm/entities/Category.entity';
 import { Event } from 'src/typeorm/entities/Event.entity';
-import { EventItem } from 'src/typeorm/entities/EventItem';
+import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Return } from 'src/typeorm/entities/Return.entity';
 import { ConfigModule } from '@nestjs/config';
+import { EventUser } from 'src/typeorm/entities/EventUsers';
 
 @Module({
   imports: [
@@ -29,10 +30,10 @@ import { ConfigModule } from '@nestjs/config';
         Event,
         EventItem,
         Return,
+        EventUser,
       ],
-      synchronize: false,
-      migrations: ['dist/migrations/*.js'],
-      migrationsRun: true,
+      synchronize: process.env.DATABASE_SYNC === 'true',
+      migrations: ['dist/src/migrations/*.js'],
     }),
     TypeOrmModule.forFeature([
       User,

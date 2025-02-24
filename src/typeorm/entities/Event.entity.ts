@@ -3,12 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  ManyToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './User.entity';
-import { EventItem } from './EventItem';
+import { EventItem } from './EventItem.entity';
+import { EventUser } from './EventUsers';
 
 @Entity('events')
 export class Event {
@@ -20,6 +19,12 @@ export class Event {
 
   @Column('date')
   date: Date;
+
+  @Column({
+    type: 'enum',
+    enum: ['small', 'big'],
+  })
+  size: string;
 
   @Column({
     type: 'enum',
@@ -43,9 +48,17 @@ export class Event {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToMany(() => User, (user) => user.events)
-  users: User[];
+  @OneToMany(() => EventUser, (eventUser) => eventUser.event, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  eventUsers: EventUser[];
 
-  @OneToMany(() => EventItem, (eventItem) => eventItem.event)
+  @OneToMany(() => EventItem, (eventItem) => eventItem.event, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   eventItems: EventItem[];
 }
