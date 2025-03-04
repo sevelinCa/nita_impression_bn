@@ -253,6 +253,7 @@ export class ReturnService {
       const admin = await entityManager.findOne(User, {
         where: { id: userId },
       });
+
       if (!admin || admin.role !== 'admin') {
         throw new ForbiddenException('Only admins can update returns');
       }

@@ -399,7 +399,6 @@ export class EventsService {
         const consolidatedItems = this.consolidateItems(
           updateEventDto.addItems,
         );
-        console.log('------>sonso', consolidatedItems);
 
         for (const item of consolidatedItems) {
           if (item.materialId && item.rentalMaterialId) {
@@ -432,6 +431,7 @@ export class EventsService {
             });
             eventItem.material = returnableMaterial;
             await entityManager.save(Material, returnableMaterial);
+            await entityManager.save(EventItem, eventItem);
           }
 
           if (item.materialId) {
@@ -466,6 +466,7 @@ export class EventsService {
             await entityManager.save(Material, material);
 
             eventItem.material = material;
+            await entityManager.save(EventItem, eventItem);
           }
 
           if (item.rentalMaterialId) {
@@ -505,16 +506,14 @@ export class EventsService {
             rentalMaterial.quantity -= item.quantity;
             await entityManager.save(RentalMaterial, rentalMaterial);
 
-            const rental = (eventItem.rentalMaterial = rentalMaterial);
-            console.log('------>rental', rental);
+            eventItem.rentalMaterial = rentalMaterial;
+            await entityManager.save(EventItem, eventItem);
           }
 
           newItems.push(eventItem);
-          console.log('------>eventItem', newItems);
         }
 
-        console.log('------->new', newItems);
-
+        event.eventItems.push(...newItems);
         await entityManager.save(EventItem, newItems);
       }
 

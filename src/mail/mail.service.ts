@@ -285,7 +285,6 @@ export class MailService {
       };
 
       await this.transporter.sendMail(mailOptions);
-      console.log('----->emailSent');
     } catch (error) {
       console.error('Error sending report email:', error.message);
     }
@@ -310,7 +309,7 @@ export class MailService {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: data.customerEmail,
-      subject: `Event Financial Report: ${data.eventId}`,
+      subject: `Event Financial Report: ${data.name}`,
       html: `<html>
         <head>
           <style>

@@ -27,7 +27,7 @@ const dataSource = new DataSource({
     EventUser,
   ],
   migrations: ['dist/src/migrations/*.js'],
-  synchronize: process.env.DATABASE_SYNC === 'false',
+  synchronize: process.env.DATABASE_SYNC === 'true',
 });
 
 export default dataSource;

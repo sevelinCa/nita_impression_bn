@@ -26,6 +26,6 @@ export class EventUser {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column()
   fee: number;
 }
