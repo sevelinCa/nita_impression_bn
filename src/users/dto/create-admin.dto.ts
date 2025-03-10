@@ -4,6 +4,7 @@ import {
   IsDate,
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -58,5 +59,6 @@ export class CreateAdminDto {
     required: false,
   })
   @IsString()
-  address: string;
+  @IsOptional()
+  address?: string;
 }
