@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcryptjs';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +22,57 @@ export class UsersService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private readonly baseService: BaseService,
   ) {}
+
+  async create(createAuthDto: CreateAdminDto, userId: string) {
+    const admin = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!admin) throw new NotFoundException('Admin Not Found');
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admin is allowed to inactivate a user',
+      );
+    }
+
+    const { email, fullName, age, ...userData } = createAuthDto;
+
+    const existingUser = await this.userRepository.findOneBy({ email });
+    if (existingUser) {
+      throw new BadRequestException({
+        message: 'Admin already exists',
+      });
+    }
+
+    if (createAuthDto.password) {
+      const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
+
+      const newUser = this.userRepository.create({
+        ...userData,
+        fullName,
+        email,
+        role: 'admin',
+        password: hashedPassword,
+        age: age ? age : undefined,
+      });
+      const result = await this.userRepository.save(newUser);
+      return {
+        message: 'Admin created successfully',
+        userId: result.id,
+      };
+    }
+
+    const newUser = this.userRepository.create({
+      ...userData,
+      fullName,
+      email,
+      age: age ? Number(age) : undefined,
+    });
+    const result = await this.userRepository.save(newUser);
+    return {
+      message: 'User created successfully',
+      userId: result.id,
+    };
+  }
 
   async findAll(paginationQuery: PaginationQueryDto) {
     const { skip, take } =

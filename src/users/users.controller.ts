@@ -5,13 +5,19 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Put,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { PaginationQueryDto } from 'src/dto/pagination-query.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -19,6 +25,7 @@ import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,6 +33,30 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('new-admin')
+  @ApiOperation({
+    summary: 'Register a new admin',
+    description: 'Creates a new admin account with email and password.',
+  })
+  @ApiBody({ type: CreateAdminDto })
+  @ApiResponse({
+    status: 201,
+    description: 'admin successfully registered.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request. The email might already be taken.',
+  })
+  create(@Body() createAuthDto: CreateAdminDto, @Req() request: Request) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.usersService.create(createAuthDto, json.userId);
+  }
 
   @ApiOperation({ summary: 'Get all users with pagination' })
   @ApiResponse({
