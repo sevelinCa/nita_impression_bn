@@ -6,7 +6,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
 import { Event } from 'src/typeorm/entities/Event.entity';
 import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Material } from 'src/typeorm/entities/Material.entity';
@@ -616,11 +616,23 @@ export class EventsService {
       throw new BadRequestException('Must be employee not admin buddy');
     }
 
-    const { skip, take } =
-      this.baseService.initializePagination(paginationQuery);
 
+    const eventUserEntries = await this.entityManager.find(EventUser, {
+      where: { user: { id: employee.id } },
+      relations: ['event'],
+    });
+  
+    const eventIds = eventUserEntries.map(entry => entry.event.id); // Extract event IDs
+  
+    if (eventIds.length === 0) {
+      return this.baseService.paginate([], 0, paginationQuery);
+    }
+  
+    const { skip, take } = this.baseService.initializePagination(paginationQuery);
+  
+    // Fetch events where event IDs match
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
-      where: { eventUsers: { id: employee.id } },
+      where: { id: In(eventIds) }, // Use In() to filter events
       take,
       skip,
       relations: [
@@ -629,7 +641,7 @@ export class EventsService {
         'eventItems.rentalMaterial',
       ],
     });
-
+  
     return this.baseService.paginate(events, totalCount, paginationQuery);
   }
 
