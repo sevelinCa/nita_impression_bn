@@ -9,10 +9,11 @@ import { EventItem } from 'src/typeorm/entities/EventItem.entity';
 import { Return } from 'src/typeorm/entities/Return.entity';
 import { ConfigModule } from '@nestjs/config';
 import { EventUser } from 'src/typeorm/entities/EventUsers';
-
+import { EventModification } from 'src/typeorm/entities/EventModification.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: '.env',
       isGlobal: true,
     }),
     TypeOrmModule.forRoot({
@@ -31,6 +32,7 @@ import { EventUser } from 'src/typeorm/entities/EventUsers';
         EventItem,
         Return,
         EventUser,
+        EventModification,
       ],
       synchronize: process.env.DATABASE_SYNC === 'true',
       migrations: ['dist/src/migrations/*.js'],
@@ -43,6 +45,7 @@ import { EventUser } from 'src/typeorm/entities/EventUsers';
       Event,
       EventItem,
       Return,
+      EventModification,
     ]),
   ],
   exports: [TypeOrmModule],
