@@ -7,12 +7,11 @@ export class AdminUserSeeder implements EntitySeeder {
   async run(db: EntityManager): Promise<void> {
     const adminData = {
       email: process.env.ADMIN_MAIL,
-      password: 'password123',
+      password: process.env.ADMIN_PASS,
       role: 'admin',
       fullName: 'Admin User',
       status: 'active',
     };
-
     const existingAdmin = await db.findOne(User, {
       where: { role: 'admin' },
     });

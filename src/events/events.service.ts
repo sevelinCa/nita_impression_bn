@@ -19,6 +19,7 @@ import { ChangeStatusDto } from './dto/change-status.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Return } from 'src/typeorm/entities/Return.entity';
 import { EventUser } from 'src/typeorm/entities/EventUsers';
+import { EventModification } from 'src/typeorm/entities/EventModification.entity';
 
 interface ConsolidatedItem {
   materialId?: string;
@@ -137,6 +138,7 @@ export class EventsService {
         size: createEventDto.size,
         cost: createEventDto.cost,
         employeeFee: totalEmployeeFee,
+        createdById: userId, // Track the admin who created this event
       });
 
       await entityManager.save(Event, event);
@@ -236,7 +238,24 @@ export class EventsService {
 
       await entityManager.save(EventItem, eventItems);
 
-      await entityManager.save(Event, event);
+      // Record this event creation in the modification history
+      const eventModification = entityManager.create(EventModification, {
+        eventId: event.id,
+        adminId: userId,
+        actionType: 'create',
+        modificationDetails: {
+          name: event.name,
+          date: event.date,
+          address: event.address,
+          size: event.size,
+          cost: event.cost,
+          employeesCount: employees.length,
+          itemsCount: eventItems.length,
+          totalEmployeeFee: totalEmployeeFee,
+        },
+      });
+
+      await entityManager.save(EventModification, eventModification);
 
       await queryRunner.commitTransaction();
 
@@ -250,6 +269,7 @@ export class EventsService {
           address: event.address,
           userFullName: user.fullName,
           employeeFee: event.employeeFee,
+          createdById: userId, // Include the admin ID in response
           createdAt: event.createdAt,
           updatedAt: event.updatedAt,
         },
@@ -280,6 +300,12 @@ export class EventsService {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         })),
+        adminAction: {
+          adminId: userId,
+          adminName: user.fullName,
+          action: 'created',
+          timestamp: new Date(),
+        },
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -318,14 +344,65 @@ export class EventsService {
         throw new NotFoundException(`Event with ID ${eventId} not found`);
       }
 
-      if (updateEventDto.name !== undefined) event.name = updateEventDto.name;
-      if (updateEventDto.date !== undefined) event.date = updateEventDto.date;
-      if (updateEventDto.address !== undefined)
+      const modificationDetails: Record<string, any> = {};
+      if (
+        updateEventDto.name !== undefined &&
+        updateEventDto.name !== event.name
+      ) {
+        modificationDetails.name = {
+          from: event.name,
+          to: updateEventDto.name,
+        };
+        event.name = updateEventDto.name;
+      }
+      if (
+        updateEventDto.date !== undefined &&
+        new Date(updateEventDto.date).toISOString() !==
+          new Date(event.date).toISOString()
+      ) {
+        modificationDetails.date = {
+          from: event.date,
+          to: updateEventDto.date,
+        };
+        event.date = updateEventDto.date;
+      }
+      if (
+        updateEventDto.address !== undefined &&
+        updateEventDto.address !== event.address
+      ) {
+        console.log('------->here')
+        modificationDetails.address = {
+          from: event.address,
+          to: updateEventDto.address,
+        };
         event.address = updateEventDto.address;
-      if (updateEventDto.cost !== undefined) event.cost = updateEventDto.cost;
-      if (updateEventDto.size !== undefined) event.size = updateEventDto.size;
-
-      if (updateEventDto.addEmployees) {
+      }
+      if (
+        updateEventDto.cost !== undefined &&
+        updateEventDto.cost !== event.cost
+      ) {
+        console.log('------->hereCOST')
+        modificationDetails.cost = {
+          from: event.cost,
+          to: updateEventDto.cost,
+        };
+        event.cost = updateEventDto.cost;
+      }
+      if (
+        updateEventDto.size !== undefined &&
+        updateEventDto.size !== event.size
+      ) {
+        modificationDetails.size = {
+          from: event.size,
+          to: updateEventDto.size,
+        };
+        event.size = updateEventDto.size;
+      }
+      if (
+        updateEventDto.addEmployees &&
+        updateEventDto.addEmployees.length > 0
+      ) {
+        modificationDetails.addEmployees = updateEventDto.addEmployees.length;
         for (const emp of updateEventDto.addEmployees) {
           if (emp.employeeId && emp.employeeFullNames) {
             throw new BadRequestException(
@@ -394,7 +471,8 @@ export class EventsService {
         event.employeeFee = totalEmployeeFee;
       }
 
-      if (updateEventDto.addItems) {
+      if (updateEventDto.addItems && updateEventDto.addItems.length > 0) {
+        modificationDetails.addedItems = updateEventDto.addItems.length;
         const newItems: EventItem[] = [];
         const consolidatedItems = this.consolidateItems(
           updateEventDto.addItems,
@@ -516,6 +594,13 @@ export class EventsService {
         event.eventItems.push(...newItems);
         await entityManager.save(EventItem, newItems);
       }
+      const eventModification = entityManager.create(EventModification, {
+        eventId: event.id,
+        adminId: userId,
+        actionType: 'update',
+        modificationDetails,
+      });
+      await entityManager.save(EventModification, eventModification);
 
       await entityManager.save(Event, event);
 
@@ -528,6 +613,38 @@ export class EventsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getEventModificationHistory(
+    eventId: string,
+    adminId: string,
+  ): Promise<EventModification[]> {
+    const admin = await this.entityManager.findOne(User, {
+      where: { id: adminId },
+    });
+    if (!admin) {
+      throw new NotFoundException('Admin User Not Found');
+    }
+
+    if (admin.role !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins are allowed to view modifications history',
+      );
+    }
+
+    const event = await this.entityManager.findOne(Event, {
+      where: { id: eventId },
+    });
+    if (!event) {
+      throw new NotFoundException(`Event with ID ${eventId} not found`);
+    }
+    const modifications = await this.entityManager.find(EventModification, {
+      where: { eventId },
+      relations: ['admin'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return modifications;
   }
 
   async eventDetails(eventId: string, userId: string) {
@@ -616,20 +733,20 @@ export class EventsService {
       throw new BadRequestException('Must be employee not admin buddy');
     }
 
-
     const eventUserEntries = await this.entityManager.find(EventUser, {
       where: { user: { id: employee.id } },
       relations: ['event'],
     });
-  
-    const eventIds = eventUserEntries.map(entry => entry.event.id); // Extract event IDs
-  
+
+    const eventIds = eventUserEntries.map((entry) => entry.event.id); // Extract event IDs
+
     if (eventIds.length === 0) {
       return this.baseService.paginate([], 0, paginationQuery);
     }
-  
-    const { skip, take } = this.baseService.initializePagination(paginationQuery);
-  
+
+    const { skip, take } =
+      this.baseService.initializePagination(paginationQuery);
+
     // Fetch events where event IDs match
     const [events, totalCount] = await this.entityManager.findAndCount(Event, {
       where: { id: In(eventIds) }, // Use In() to filter events
@@ -641,7 +758,7 @@ export class EventsService {
         'eventItems.rentalMaterial',
       ],
     });
-  
+
     return this.baseService.paginate(events, totalCount, paginationQuery);
   }
 
@@ -673,7 +790,12 @@ export class EventsService {
     switch (changeStatusDto.status) {
       case 'ongoing':
       case 'done':
-        return this.updateSimpleEventStatus(event, changeStatusDto.status);
+        return this.updateSimpleEventStatus(
+          event,
+          changeStatusDto.status,
+          admin.id,
+          event.status,
+        );
 
       case 'cancelled':
         return this.handleCancelledEvent(event);
@@ -686,9 +808,23 @@ export class EventsService {
   private async updateSimpleEventStatus(
     event: Event,
     status: string,
+    userId: string,
+    oldStatus: string,
   ): Promise<Event> {
     event.status = status;
-    return await this.entityManager.save(event);
+    const eventChange = await this.entityManager.save(event);
+    const eventModification = this.entityManager.create(EventModification, {
+      eventId: event.id,
+      adminId: userId,
+      actionType: 'status_change',
+      modificationDetails: {
+        from: oldStatus,
+        to: status,
+      },
+    });
+
+    await this.entityManager.save(EventModification, eventModification);
+    return eventChange;
   }
 
   private async handleCancelledEvent(event: Event): Promise<void> {

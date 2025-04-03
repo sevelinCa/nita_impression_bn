@@ -5,9 +5,12 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { EventItem } from './EventItem.entity';
 import { EventUser } from './EventUsers';
+import { User } from './User.entity';
 
 @Entity('events')
 export class Event {
@@ -38,6 +41,13 @@ export class Event {
 
   @Column()
   employeeFee: number;
+
+  @Column({ nullable: true })
+  createdById: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'createdById' })
+  createdBy: User;
 
   @Column()
   address: string;

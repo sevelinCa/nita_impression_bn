@@ -69,6 +69,25 @@ export class EventsController {
     return this.eventsService.create(createEventDto, json.userId);
   }
 
+  @Get(':id/modifications')
+  @ApiOperation({ summary: 'Get event modification history' })
+  @ApiParam({ name: 'id', type: String, description: 'Event ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved modification history',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getEventModifications(
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.replace('Bearer ', '');
+    const json = this.jwtService.decode(token, { json: true }) as {
+      userId: string;
+    };
+    return this.eventsService.getEventModificationHistory(id, json.userId);
+  }
+
   @Get('eventItems')
   @ApiOperation({ summary: 'Get all events items' })
   @ApiResponse({
