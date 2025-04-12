@@ -59,10 +59,6 @@ export class ReturnService {
         throw new NotFoundException('Event not found or unauthorized');
       }
 
-      if (event.employeeFee <= 0) {
-        throw new ForbiddenException('Employee fee is not set');
-      }
-
       if (event.status !== 'done') {
         throw new BadRequestException(
           'Can only process returns for completed events',

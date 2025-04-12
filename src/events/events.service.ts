@@ -138,7 +138,7 @@ export class EventsService {
         size: createEventDto.size,
         cost: createEventDto.cost,
         employeeFee: totalEmployeeFee,
-        createdById: userId, // Track the admin who created this event
+        createdById: userId,
       });
 
       await entityManager.save(Event, event);
@@ -370,7 +370,6 @@ export class EventsService {
         updateEventDto.address !== undefined &&
         updateEventDto.address !== event.address
       ) {
-        console.log('------->here')
         modificationDetails.address = {
           from: event.address,
           to: updateEventDto.address,
@@ -381,7 +380,6 @@ export class EventsService {
         updateEventDto.cost !== undefined &&
         updateEventDto.cost !== event.cost
       ) {
-        console.log('------->hereCOST')
         modificationDetails.cost = {
           from: event.cost,
           to: updateEventDto.cost,
@@ -640,7 +638,7 @@ export class EventsService {
     }
     const modifications = await this.entityManager.find(EventModification, {
       where: { eventId },
-      relations: ['admin'],
+      relations: ['admin', 'event'],
       order: { createdAt: 'DESC' },
     });
 
