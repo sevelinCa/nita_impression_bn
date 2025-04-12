@@ -23,10 +23,7 @@ export class Event {
   @Column('date')
   date: Date;
 
-  @Column({
-    type: 'enum',
-    enum: ['small', 'big'],
-  })
+  @Column({ nullable: true })
   size: string;
 
   @Column({

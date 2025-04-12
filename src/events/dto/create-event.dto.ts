@@ -133,13 +133,9 @@ export class CreateEventDto {
 
   @ApiProperty({
     description: 'The size of the event',
-    enum: ['small', 'big'],
-    example: 'small',
+    example: 'wedding events',
   })
-  @IsEnum(['small', 'big'], {
-    message: 'Status must be one of: small and big',
-  })
-  size: 'big' | 'small';
+  size: string;
 
   @ApiProperty({
     description: 'List of employees working at the event',
