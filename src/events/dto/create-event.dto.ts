@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsUUID,
   IsEnum,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -135,6 +136,8 @@ export class CreateEventDto {
     description: 'The size of the event',
     example: 'wedding events',
   })
+  @IsString()
+  @IsNotEmpty()
   size: string;
 
   @ApiProperty({
