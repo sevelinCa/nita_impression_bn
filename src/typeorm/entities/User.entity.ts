@@ -46,6 +46,9 @@ export class User {
   @Column({ nullable: true, type: 'timestamp' })
   resetPasswordExpires: Date;
 
+  @Column({ type: 'decimal', nullable: true })
+  price: number; 
+
   @CreateDateColumn()
   createdAt: Date;
 

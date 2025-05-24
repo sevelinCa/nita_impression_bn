@@ -4,6 +4,7 @@ import {
   IsDate,
   IsEmail,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MinLength,
@@ -65,4 +66,11 @@ export class UserDto {
   @IsString()
   @IsOptional()
   address?: string;
+  @ApiPropertyOptional({
+    description: 'Employee price',
+    example: 200.3,
+  })
+  @IsNumber()
+  @IsOptional()
+  price: number;
 }

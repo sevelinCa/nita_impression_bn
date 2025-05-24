@@ -155,7 +155,7 @@ export class UsersService {
       throw new BadRequestException('Must be employee not admin buddy!');
     }
 
-    const result = this.userRepository.save({ ...user, ...updateUserDto });
+    const result = this.userRepository.save({ ...employee, ...updateUserDto });
     return result;
   }
 

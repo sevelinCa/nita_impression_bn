@@ -25,7 +25,7 @@ export class AuthService {
   ) {}
 
   async create(createAuthDto: UserDto) {
-    const { email, fullName, age, ...userData } = createAuthDto;
+    const { price,email, fullName, age, ...userData } = createAuthDto;
 
     const existingUser = await this.userRepository.findOneBy({ email });
     if (existingUser) {
@@ -43,6 +43,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         age: age ? age : undefined,
+        price: price ? Number(price) : undefined,
       });
       const result = await this.userRepository.save(newUser);
       return {
@@ -56,6 +57,7 @@ export class AuthService {
       fullName,
       email,
       age: age ? Number(age) : undefined,
+      price: price ? Number(price) : undefined,
     });
     const result = await this.userRepository.save(newUser);
     return {
